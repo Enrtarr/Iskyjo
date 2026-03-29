@@ -45,7 +45,7 @@ public class GameController {
         }
     }
 
-        public Card getDiscardPileTop() {
+    public Card getDiscardPileTop() {
         if (this.discardPile.getAllCards().size() > 0) {
             return this.discardPile.getAllCards().getLast();
         }
@@ -143,7 +143,7 @@ public class GameController {
             return;
         }
 
-        System.out.println("Preparing new round...");
+        // System.out.println("Preparing new round...");
 
         for (Player plr : this.players) {
             // AJOUTER LES JOKERS LÀ
@@ -156,26 +156,28 @@ public class GameController {
             for (Card c : plr.getDeck().getAllCards()) {
                 this.discardPile.addCard(c);
             }
+            // IL SEMBLE Y AVOIR UN PROBLÈME AVEC CLEAR
             plr.getDeck().clear();
         }
 
 
         // METTRE LE JOUEUR AVEC LE PLUS/MOINS DE POINTS EN 1ER
 
+        // Y A MOYEN DE FAIRE ÇA AVEC POP AUSSI, JE PENSE
         for (Card c : this.discardPile.getAllCards()) {
             this.drawPile.addCard(c);
         }
         this.discardPile.clear();
 
-        System.out.print("Draw pile: ");
-        this.drawPile.printAll();
-        System.out.print("Discard pile: ");
-        this.discardPile.printAll();
+        // System.out.print("Draw pile: ");
+        // this.drawPile.printAll();
+        // System.out.print("Discard pile: ");
+        // this.discardPile.printAll();
 
-        System.out.println("Shuffling draw pile...");
+        // System.out.println("Shuffling draw pile...");
         drawPile.shuffle();
-        System.out.print("New draw pile: ");
-        this.drawPile.printAll();
+        // System.out.print("New draw pile: ");
+        // this.drawPile.printAll();
 
         for (Player plr : this.players) {
             Deck deck = plr.getDeck();
@@ -188,8 +190,8 @@ public class GameController {
                 }
                 deck.addRow(row);
             }
-            System.out.println(plr.getName()+"'s deck:");
-            deck.printAll();
+            // System.out.println(plr.getName()+"'s deck:");
+            // deck.printAll();
         }
 
         beginRound();
