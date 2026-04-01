@@ -15,7 +15,7 @@ public class App {
         int nbrOfCards = 150;
         int nbrOfPlayers = 1;
 
-         scanner = new Scanner(System.in);
+        scanner = new Scanner(System.in);
 
         GameController game = setupGame(nbrOfPlayers, nbrOfCards);
         // FIND A WAY TO START THE GAME CLEANLY
