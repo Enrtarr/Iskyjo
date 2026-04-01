@@ -17,6 +17,8 @@ public class GameController {
     private boolean isRoundEnding;
     private int roundScore;
     private Card lastDrawnCard;
+    // 1=next turn, 2=next round (shop), 0=loss
+    private int gameState;
 
     public GameController(ArrayList<Player> players, int nbrOfCards) {
         this.players = players;
@@ -28,6 +30,7 @@ public class GameController {
         this.isRoundEnding = true;
         this.roundScore = 50;
         this.lastDrawnCard = null;
+        this.gameState = 1;
     }
 
     public void execute(Action action) {
@@ -117,7 +120,7 @@ public class GameController {
         this.endTurn();
     }
 
-    private boolean endTurn() {
+    private void endTurn() {
         if (!this.getCurrentPlayer().getDeck().hasHiddenCard()) {
             this.endRound();
         }
@@ -132,15 +135,13 @@ public class GameController {
         // ^^ nvm ignore that
 
         if (this.startingPlayerIndex == this.currentPlayerIndex && this.isRoundEnding) {
-            // will return false if the game is lost, true otherwise
-            return this.prepareNewRound();
+            this.prepareNewRound();
         }
-        
-        return true; //return true if the game can continue (not lost)
     }
 
     private void beginRound() {
         this.isRoundEnding = false;
+        this.gameState = 1;
     }
 
     private void endRound() {
@@ -148,9 +149,9 @@ public class GameController {
         this.isRoundEnding = true;
     }
 
-    private boolean prepareNewRound() {
+    private void prepareNewRound() {
         if (!this.isRoundEnding) {
-            return true;
+            return;
         }
 
         System.out.println("\nPreparing new round...");
@@ -210,7 +211,10 @@ public class GameController {
 
         if (plrPoints < this.roundScore) {
             // player didn't get enough point, he lost this game
-            return false;
+            this.gameState = 0;
+        }
+        else {
+            this.gameState = 2;
         }
 
         // METTRE LE JOUEUR AVEC LE PLUS/MOINS DE POINTS EN 1ER (PEUT-ÊTRE)
@@ -247,11 +251,13 @@ public class GameController {
         }
 
         beginRound();
-
-        return true;
     }
 
     public void beginGame() {
         prepareNewRound();
+    }
+
+    public int getGameState() {
+        return this.gameState;
     }
 }
