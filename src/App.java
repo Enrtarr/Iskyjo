@@ -4,6 +4,9 @@ import java.util.Scanner;
 import game.*;
 // import jokers.*;
 import game.actions.*;
+import jokers.AddXCardJoker;
+import jokers.ComboRightJoker;
+import jokers.Joker;
 
 public class App {
 
@@ -22,6 +25,7 @@ public class App {
         while (true) {
             Player curPlayer = game.getCurrentPlayer();
 
+            System.out.println("");
             System.out.println("Player "+curPlayer.getName()+"'s turn.");
             System.out.println("Here is you deck:");
             curPlayer.getDeck().printAll();
@@ -39,14 +43,21 @@ public class App {
             else {
                 System.out.println("Discard pile: empty");
             }
+            boolean isDrawPileEmpty = (game.getDiscardPileTop() != null || nbrOfPlayers == 1) ? true : false;
 
-            System.out.println("What would you want to do?");
-            System.out.println("1) Pick the card at the top of the draw pile");
-            System.out.println("2) Pick the card at the top of the discard pile");
-            // PENSER AU CAS OU LA PILE EST VIDE
-            // EN CAS DE JOUEUR SOLO, NE PAS LE LAISSER PRENDRE DANS LA DEFAUSSE
+            if (!isDrawPileEmpty) {
+                System.out.println("What would you want to do?");
+                System.out.println("1) Pick the card at the top of the draw pile");
+                System.out.println("2) Pick the card at the top of the discard pile");
+            }
+            else {
+                System.out.println("Picking the card at the top of the draw pile");
+            }
 
-            int answer = scanner.nextInt();
+            int answer = 1;
+            if (!isDrawPileEmpty) {
+                scanner.nextInt();
+            }
 
             Card card = null;
 
@@ -92,6 +103,14 @@ public class App {
                     game.execute(discardCard);
                     break;
                 default:
+            }
+
+            Class<? extends Joker> jokerType = Joker.getRandomType();
+
+            if (jokerType == AddXCardJoker.class) {
+                new AddXCardJoker(5, true);
+            } else if (jokerType == ComboRightJoker.class) {
+                new ComboRightJoker(3, 4);
             }
         }
 

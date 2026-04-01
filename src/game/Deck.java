@@ -231,6 +231,8 @@ public class Deck {
             row.clear();
         }
         this.matrix.clear();
+        this.length = 0;
+        this.height = 0;
     }
 
     /**
@@ -245,7 +247,7 @@ public class Deck {
                     System.out.print(matrix.get(i).get(j).getValue() + " ");
                 }
                 else {
-                    System.out.print("h ");
+                    System.out.print(matrix.get(i).get(j).getValue() + "h ");
                 }
             }
             System.out.println("]");
@@ -460,6 +462,50 @@ public class Deck {
     }
 
     /**
+     * Removes the full columns made of the same values (by default ignores columns with hidden cards)
+     */
+    public void removeColumns() {
+        removeColumns(false);
+    }
+
+    /**
+     * Removes the full columns made of the same values
+     * 
+     * @param ignoreHidden Whether or not to remove columns with hidden cards (true=remove)
+     */
+    public void removeColumns(boolean ignoreHidden) {
+        // ArrayList<int[]> finalList = new ArrayList<>();
+        for (int j=0;j<this.length;j++) {
+            int cur = 0, prev = 0, streak = 0;
+            for (int i=0;i<this.height;i++) {
+                cur = this.matrix.get(i).get(j).getValue();
+                if (cur == prev) {
+                    streak++;
+                }
+                else {
+                    if (streak+1 == this.height) {
+                        // finalList.add(new int[]{streak+1,prev});
+                        this.removeColumn(j);
+                    }
+                    streak = 0;
+                }
+                if (this.matrix.get(i).get(j).isHidden() && !ignoreHidden) {
+                    streak = 0;
+                }
+                prev = cur;
+            }
+            if (streak+1 == this.height) {
+                // finalList.add(new int[]{streak+1,prev});
+                this.removeColumn(j);
+            }
+        }
+    }
+
+    // public void clearFullLines() {
+        
+    // }
+
+    /**
      * Main method used to test Deck operations and streak scanning.
      *
      * @param args Command-line arguments (not used)
@@ -547,7 +593,7 @@ public class Deck {
         r2.add(new Card(7));
 
         ArrayList<Card> r3 = new ArrayList<>();
-        r3.add(new Card(6));
+        r3.add(new Card(1));
         r3.add(new Card(7));
         r3.add(new Card(2));
         r3.add(new Card(7));
@@ -579,5 +625,13 @@ public class Deck {
         for (int[] arr : deck.scanAntiDiagonals()) {
             System.out.println("Value: " + arr[1] + ", Times: " + arr[0]);
         }
+
+        System.out.println("Removing full columns...");
+        deck.removeColumns();
+        deck.printAll();
+
+        System.out.println("Clearing deck...");
+        deck.clear();
+        deck.printAll();
     }
 }

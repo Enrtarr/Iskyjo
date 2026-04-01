@@ -16,6 +16,7 @@ public class Player {
     private int maxJokers;
     private ArrayList<Joker> consumables;
     private int maxConsumables;
+    private ArrayList<Joker> upgrades;
     private String name;
     private int points;
     private int money;
@@ -27,6 +28,7 @@ public class Player {
             DEFAULT_MAX_JOKERS, 
             null, 
             DEFAULT_MAX_CONSUMABLES, 
+            null,
             DEFAULT_NAME, 
             DEFAULT_POINTS, 
             DEFAULT_MONEY
@@ -40,6 +42,7 @@ public class Player {
             DEFAULT_MAX_JOKERS, 
             null, 
             DEFAULT_MAX_CONSUMABLES, 
+            null,
             name, 
             DEFAULT_POINTS, 
             DEFAULT_MONEY
@@ -48,12 +51,14 @@ public class Player {
 
     public Player(Deck deck, ArrayList<Joker> jokers, int maxJokers,
                 ArrayList<Joker> consumables, int maxConsumables,
-                String name, int points, int money) {
+                ArrayList<Joker> upgrades, String name, int points, 
+                int money) {
         this.deck = (deck != null) ? deck : new Deck();
         this.jokers = (jokers != null) ? jokers : new ArrayList<>();
         this.maxJokers = maxJokers;
         this.consumables = (consumables != null) ? consumables : new ArrayList<>();
         this.maxConsumables = maxConsumables;
+        this.upgrades = (upgrades != null) ? upgrades : new ArrayList<>();
         this.name = (name != null) ? name : DEFAULT_NAME;
         this.points = points;
         this.money = money;
@@ -137,6 +142,22 @@ public class Player {
      */
     public void setMaxConsumables(int maxConsumables) {
         this.maxConsumables = maxConsumables;
+    }
+
+    /**
+     * Returns the list of consumables.
+     * @return the consumables
+     */
+    public ArrayList<Joker> getUpgrades() {
+        return this.upgrades;
+    }
+
+    /**
+     * Sets the list of consumables.
+     * @param upgrades the upgrades to set
+     */
+    public void setUpgrades(ArrayList<Joker> upgrades) {
+        this.upgrades = (upgrades != null) ? upgrades : new ArrayList<>();
     }
 
     /**

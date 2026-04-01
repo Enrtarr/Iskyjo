@@ -2,6 +2,8 @@ package game;
 
 import java.util.ArrayList;
 
+import jokers.*;
+import jokers.Joker.JokerCategory;
 import game.actions.Action;
 
 public class GameController {
@@ -37,6 +39,11 @@ public class GameController {
     }
 
     public Card getDrawPileTop() {
+        // Cas d'un joueur solo, on peut pas le laisser piocher
+        // if (this.players.size() == 1) {
+        //     return getDiscardPileTop();
+        // }
+
         if (this.drawPile.getAllCards().size() > 0) {
             return this.drawPile.getAllCards().getLast();
         }
@@ -110,23 +117,26 @@ public class GameController {
         this.endTurn();
     }
 
-    private void endTurn() {
+    private boolean endTurn() {
         if (!this.getCurrentPlayer().getDeck().hasHiddenCard()) {
             this.endRound();
         }
 
         // VERIFIER LES COLONNES / LIGNES, ET LES SUPPRIMER SI BESOIN
         // (il faut rajouter une méthode à Deck pour ça)
+        this.getCurrentPlayer().getDeck().removeColumns();
 
         this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.players.size();
 
         // Check if the current player has reached the point quota, if yes, endRound()
+        // ^^ nvm ignore that
 
         if (this.startingPlayerIndex == this.currentPlayerIndex && this.isRoundEnding) {
-            // do something, but I don't know what yet
-            this.prepareNewRound();
+            // will return false if the game is lost, true otherwise
+            return this.prepareNewRound();
         }
         
+        return true; //return true if the game can continue (not lost)
     }
 
     private void beginRound() {
@@ -138,17 +148,56 @@ public class GameController {
         this.isRoundEnding = true;
     }
 
-    private void prepareNewRound() {
+    private boolean prepareNewRound() {
         if (!this.isRoundEnding) {
-            return;
+            return true;
         }
 
-        // System.out.println("Preparing new round...");
+        System.out.println("\nPreparing new round...");
+
+        int plrPoints = 0;
 
         for (Player plr : this.players) {
             // AJOUTER LES JOKERS LÀ
+
+            // Remove full columns
+            plr.getDeck().removeColumns(true);
+
+            for (Joker j : plr.getJokers()) {
+                if (j.getCategory() == JokerCategory.DECK) {
+                    j.apply(plr.getDeck());
+                }
+            }
+
             ArrayList<int[]> combos = plr.getDeck().scanCombos();
             // OU LÀ
+
+            for (Joker j : plr.getJokers()) {
+                if (j.getCategory() == JokerCategory.COMBO) {
+                    j.apply(combos);
+                }
+            }
+
+            for (Joker j : plr.getUpgrades()) {
+                if (j.getCategory() == JokerCategory.COMBO) {
+                    j.apply(combos);
+                }
+            }
+
+            int totalCardValue = 0;
+            for (Card c : plr.getDeck().getAllCards()) {
+                totalCardValue += c.getValue();
+            }
+
+            int totalComboValue = 0;
+            for (int[] c : combos) {
+                totalComboValue += c[0] * c[1];
+            }
+
+            int totalValue = totalCardValue + totalComboValue;
+
+            plr.setPoints(plr.getPoints() + totalValue);
+            plrPoints += totalValue;
 
             // AJOUTER LES POINTS ET TOUT, LÀ JE LE FAIT PAS HISTOIRE
             // DE POUVOIR TESTER AVANT 3H DU MAT
@@ -156,12 +205,15 @@ public class GameController {
             for (Card c : plr.getDeck().getAllCards()) {
                 this.discardPile.addCard(c);
             }
-            // IL SEMBLE Y AVOIR UN PROBLÈME AVEC CLEAR
             plr.getDeck().clear();
         }
 
+        if (plrPoints < this.roundScore) {
+            // player didn't get enough point, he lost this game
+            return false;
+        }
 
-        // METTRE LE JOUEUR AVEC LE PLUS/MOINS DE POINTS EN 1ER
+        // METTRE LE JOUEUR AVEC LE PLUS/MOINS DE POINTS EN 1ER (PEUT-ÊTRE)
 
         // Y A MOYEN DE FAIRE ÇA AVEC POP AUSSI, JE PENSE
         for (Card c : this.discardPile.getAllCards()) {
@@ -174,7 +226,7 @@ public class GameController {
         // System.out.print("Discard pile: ");
         // this.discardPile.printAll();
 
-        // System.out.println("Shuffling draw pile...");
+        System.out.println("\nShuffling draw pile...");
         drawPile.shuffle();
         // System.out.print("New draw pile: ");
         // this.drawPile.printAll();
@@ -195,6 +247,8 @@ public class GameController {
         }
 
         beginRound();
+
+        return true;
     }
 
     public void beginGame() {
