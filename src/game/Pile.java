@@ -100,6 +100,13 @@ public class Pile {
     }
 
     /**
+     * Returns the amount of cards currently present in the pile
+     */
+    public int size() {
+        return this.pile.size();
+    }
+
+    /**
      * Prints all cards without additional information.
      */
     public void printAll() {
