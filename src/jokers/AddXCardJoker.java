@@ -16,6 +16,10 @@ public class AddXCardJoker extends Joker {
     @Override
     public JokerCategory getCategory() { return CATEGORY; }
 
+    public static final JokerRarity RARITY = JokerRarity.COMMON;
+    @Override
+    public JokerRarity getRarity() { return RARITY; }
+
     @Override
     public void apply(Card card) {
         card.setValue(card.getValue()+this.value);

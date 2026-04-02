@@ -15,6 +15,9 @@ public class ComboLeftAllJoker extends Joker {
     @Override
     public JokerCategory getCategory() { return CATEGORY; }
 
+    public static final JokerRarity RARITY = JokerRarity.UNCOMMON;
+    @Override
+    public JokerRarity getRarity() { return RARITY; }
 
     @Override
     public void apply(ArrayList<int[]> combos) {

@@ -18,10 +18,22 @@ public abstract class Joker {
         MISC
     }
 
-    public abstract JokerCategory getCategory();
+    public enum JokerRarity {
+        COMMON,
+        UNCOMMON,
+        RARE,
+        EPIC,
+        LEGENDARY
+    }
 
+    public abstract JokerCategory getCategory();
     public static boolean isOfCategory(Joker joker, JokerCategory category) {
         return joker.getCategory() == category;
+    }
+
+    public abstract JokerRarity getRarity();
+    public static boolean isOfRarity(Joker joker, JokerRarity rarity) {
+        return joker.getRarity() == rarity;
     }
 
     public boolean isConsumable() {
