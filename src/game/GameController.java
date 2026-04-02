@@ -6,6 +6,10 @@ import jokers.*;
 import jokers.Joker.JokerCategory;
 import game.actions.Action;
 
+/**
+ * Controls the overall game flow, including players, turns, rounds,
+ * card piles, and scoring logic.
+ */
 public class GameController {
 
     private ArrayList<Player> players;
@@ -18,9 +22,20 @@ public class GameController {
     private int roundScore;
     private int moneyPerRound;
     private Card lastDrawnCard;
-    // 1=next turn, 2=next round (shop), 0=loss
+    /**
+     * Game state:
+     * 1 = next turn
+     * 2 = next round (shop)
+     * 0 = loss
+     */
     private int gameState;
 
+    /**
+     * Creates a new GameController instance.
+     *
+     * @param players list of players participating in the game
+     * @param nbrOfCards number of cards to initialize in the draw pile
+     */
     public GameController(ArrayList<Player> players, int nbrOfCards) {
         this.players = players;
         this.drawPile = new Pile(nbrOfCards);
@@ -35,14 +50,29 @@ public class GameController {
         this.gameState = 1;
     }
 
+    /**
+     * Executes a given action on this game controller.
+     *
+     * @param action the action to execute
+     */
     public void execute(Action action) {
         action.execute(this);
     }
 
+    /**
+     * Returns the current player.
+     *
+     * @return the active player
+     */
     public Player getCurrentPlayer() {
         return this.players.get(this.currentPlayerIndex);
     }
 
+    /**
+     * Returns the top card of the draw pile.
+     *
+     * @return the top card, or null if empty
+     */
     public Card getDrawPileTop() {
         // Cas d'un joueur solo, on peut pas le laisser piocher
         // if (this.players.size() == 1) {
@@ -57,6 +87,11 @@ public class GameController {
         }
     }
 
+    /**
+     * Returns the top card of the discard pile.
+     *
+     * @return the top card, or null if empty
+     */
     public Card getDiscardPileTop() {
         if (this.discardPile.getAllCards().size() > 0) {
             return this.discardPile.getAllCards().getLast();
@@ -66,14 +101,30 @@ public class GameController {
         }
     }
 
+    /**
+     * Returns the top cards of both piles.
+     *
+     * @return an array containing [drawPileTop, discardPileTop]
+     */
     public Card[] getBothPilesTop() {
         return new Card[] {this.drawPile.getAllCards().getLast(), this.discardPile.getAllCards().getLast()};
     }
 
+    /**
+     * Returns the last drawn card.
+     *
+     * @return the last drawn card
+     */
     public Card getLastDrawnedCard() {
         return this.lastDrawnCard;
     }
 
+    /**
+     * Flips a card in the player's deck if it is their turn.
+     *
+     * @param player the player performing the action
+     * @param cardCoords coordinates of the card to flip
+     */
     public void flipCard(Player player, int[] cardCoords) {
         if (player != this.getCurrentPlayer()) {
             return;
@@ -82,6 +133,14 @@ public class GameController {
         player.getDeck().flipCard(cardCoords);
     }
 
+    /**
+     * Replaces a card in the player's deck with a new one,
+     * then discards the old card.
+     *
+     * @param player the player performing the action
+     * @param cardCoords coordinates of the card to replace
+     * @param newCard the new card
+     */
     public void replaceCard(Player player, int[] cardCoords, Card newCard) {
         if (player != this.getCurrentPlayer()) {
             return;
@@ -95,6 +154,13 @@ public class GameController {
         this.endTurn();
     }
 
+    /**
+     * Draws a card from the specified pile.
+     *
+     * @param pileName name of the pile ("draw" or "discard")
+     * @return the drawn card
+     * @throws IllegalArgumentException if the pile name is unknown
+     */
     public Card drawCard(String pileName) {
         if (pileName.toLowerCase().equals("draw")) {
             Card card = this.drawPile.pop();
@@ -109,6 +175,12 @@ public class GameController {
         }
     }
 
+    /**
+     * Adds a card to the discard pile if it is the player's turn.
+     *
+     * @param player the player discarding the card
+     * @param card the card to discard
+     */
     public void discardCard(Player player, Card card) {
         if (player != this.getCurrentPlayer()) {
             return;
@@ -122,6 +194,9 @@ public class GameController {
         this.endTurn();
     }
 
+    /**
+     * Ends the current player's turn and handles round transitions.
+     */
     private void endTurn() {
         if (!this.getCurrentPlayer().getDeck().hasHiddenCard()) {
             this.endRound();
@@ -136,16 +211,27 @@ public class GameController {
         }
     }
 
+    /**
+     * Begins a new round.
+     */
     private void beginRound() {
         this.isRoundEnding = false;
         this.gameState = 1;
     }
 
+    /**
+     * Ends the current round and increments the round counter.
+     */
     private void endRound() {
         this.round = this.round + 1;
         this.isRoundEnding = true;
     }
 
+    /**
+     * Prepares the next round:
+     * applies joker effects, calculates scores,
+     * distributes rewards, resets decks and piles.
+     */
     private void prepareNewRound() {
         if (!this.isRoundEnding) {
             return;
@@ -253,10 +339,18 @@ public class GameController {
         beginRound();
     }
 
+    /**
+     * Starts the game by preparing the first round.
+     */
     public void beginGame() {
         prepareNewRound();
     }
 
+    /**
+     * Returns the current game state.
+     *
+     * @return the game state (0, 1, or 2)
+     */
     public int getGameState() {
         return this.gameState;
     }
