@@ -16,6 +16,7 @@ public class GameController {
     private int round;
     private boolean isRoundEnding;
     private int roundScore;
+    private int moneyPerRound;
     private Card lastDrawnCard;
     // 1=next turn, 2=next round (shop), 0=loss
     private int gameState;
@@ -29,6 +30,7 @@ public class GameController {
         this.round = 1;
         this.isRoundEnding = true;
         this.roundScore = 50;
+        this.moneyPerRound = 3;
         this.lastDrawnCard = null;
         this.gameState = 1;
     }
@@ -125,14 +127,9 @@ public class GameController {
             this.endRound();
         }
 
-        // VERIFIER LES COLONNES / LIGNES, ET LES SUPPRIMER SI BESOIN
-        // (il faut rajouter une méthode à Deck pour ça)
         this.getCurrentPlayer().getDeck().removeColumns();
 
         this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.players.size();
-
-        // Check if the current player has reached the point quota, if yes, endRound()
-        // ^^ nvm ignore that
 
         if (this.startingPlayerIndex == this.currentPlayerIndex && this.isRoundEnding) {
             this.prepareNewRound();
@@ -200,8 +197,14 @@ public class GameController {
             plr.setPoints(plr.getPoints() + totalValue);
             plrPoints += totalValue;
 
-            // AJOUTER LES POINTS ET TOUT, LÀ JE LE FAIT PAS HISTOIRE
-            // DE POUVOIR TESTER AVANT 3H DU MAT
+            // if the player beated his fraction of the quota, give him money
+            if (totalValue >= this.roundScore/this.players.size()) {
+                plr.setMoney(plr.getMoney() + this.moneyPerRound);
+            }
+
+            // the %-age of money to add to the player
+            int moneyToAdd = (((totalValue*100)/(this.roundScore/this.players.size()))-1)*plr.getInterests();
+            plr.setMoney((int) Math.floor(plr.getMoney() + (plr.getMoney() * moneyToAdd)));
 
             for (Card c : plr.getDeck().getAllCards()) {
                 this.discardPile.addCard(c);
@@ -217,13 +220,10 @@ public class GameController {
             this.gameState = 2;
         }
 
-        // METTRE LE JOUEUR AVEC LE PLUS/MOINS DE POINTS EN 1ER (PEUT-ÊTRE)
-
-        // Y A MOYEN DE FAIRE ÇA AVEC POP AUSSI, JE PENSE
-        for (Card c : this.discardPile.getAllCards()) {
-            this.drawPile.addCard(c);
+        // transfer all the cards from the discard to the draw pile
+        for (int i=0;i<this.discardPile.size();i++) {
+            this.drawPile.addCard(this.discardPile.pop());
         }
-        this.discardPile.clear();
 
         // System.out.print("Draw pile: ");
         // this.drawPile.printAll();
