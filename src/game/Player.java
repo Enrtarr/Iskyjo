@@ -10,6 +10,7 @@ public class Player {
     private static final String DEFAULT_NAME = "Unnamed";
     private static final int DEFAULT_POINTS = 0;
     private static final int DEFAULT_MONEY = 0;
+    private static final int DEFAULT_INTERESTS = 1;
 
     private Deck deck;
     private ArrayList<Joker> jokers;
@@ -20,6 +21,7 @@ public class Player {
     private String name;
     private int points;
     private int money;
+    private int interests;
 
     public Player() {
         this(
@@ -31,7 +33,8 @@ public class Player {
             null,
             DEFAULT_NAME, 
             DEFAULT_POINTS, 
-            DEFAULT_MONEY
+            DEFAULT_MONEY,
+            DEFAULT_INTERESTS
         );
     }
 
@@ -45,14 +48,15 @@ public class Player {
             null,
             name, 
             DEFAULT_POINTS, 
-            DEFAULT_MONEY
+            DEFAULT_MONEY,
+            DEFAULT_INTERESTS
         );
     }
 
     public Player(Deck deck, ArrayList<Joker> jokers, int maxJokers,
                 ArrayList<Joker> consumables, int maxConsumables,
                 ArrayList<Joker> upgrades, String name, int points, 
-                int money) {
+                int money, int interests) {
         this.deck = (deck != null) ? deck : new Deck();
         this.jokers = (jokers != null) ? jokers : new ArrayList<>();
         this.maxJokers = maxJokers;
@@ -62,6 +66,7 @@ public class Player {
         this.name = (name != null) ? name : DEFAULT_NAME;
         this.points = points;
         this.money = money;
+        this.interests = interests;
     }
 
     /**
@@ -85,7 +90,7 @@ public class Player {
      * @return the jokers
      */
     public ArrayList<Joker> getJokers() {
-        return jokers;
+        return this.jokers;
     }
 
     /**
@@ -117,7 +122,7 @@ public class Player {
      * @return the consumables
      */
     public ArrayList<Joker> getConsumables() {
-        return consumables;
+        return this.consumables;
     }
 
     /**
@@ -133,7 +138,7 @@ public class Player {
      * @return maxConsumables
      */
     public int getMaxConsumables() {
-        return maxConsumables;
+        return this.maxConsumables;
     }
 
     /**
@@ -165,7 +170,7 @@ public class Player {
      * @return the name
      */
     public String getName() {
-        return name;
+        return this.name;
     }
 
     /**
@@ -181,7 +186,7 @@ public class Player {
      * @return the points
      */
     public int getPoints() {
-        return points;
+        return this.points;
     }
 
     /**
@@ -197,7 +202,7 @@ public class Player {
      * @return the money
      */
     public int getMoney() {
-        return money;
+        return this.money;
     }
 
     /**
@@ -206,5 +211,21 @@ public class Player {
      */
     public void setMoney(int money) {
         this.money = money;
+    }
+
+    /**
+     * Returns the player's interests rates.
+     * @return the rates
+     */
+    public int getInterests() {
+        return this.interests;
+    }
+
+    /**
+     * Sets the player's interests rates.
+     * @param interests the interests to set (in % over b % over the quota)
+     */
+    public void setInterests(int interests) {
+        this.interests = interests;
     }
 }
