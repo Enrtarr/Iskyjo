@@ -1,5 +1,7 @@
 package com.neuilleprime.gui;
 
+import com.neuilleprime.gui.DiscordRpc;
+
 import javafx.animation.AnimationTimer;
 import javafx.animation.FadeTransition;
 import javafx.animation.Interpolator;
@@ -57,6 +59,10 @@ public class MainGui extends Application {
     private AnimationTimer splashTimer;
     private boolean splashSkipped = false;
     private boolean isTransitionRunning = false;
+    private GameGui.GameState activeGameState;
+    private AnimationTimer discordSyncTimer;
+    private long lastDiscordSyncNs = 0L;
+    private String lastPresenceKey = "";
 
     // Startup ----------------------------------------------------------------------------
 
@@ -81,7 +87,10 @@ public class MainGui extends Application {
             mainStage,
             customFont,
             customFontBold,
-            () -> startGameSession(GameGui.buildDemoState(), true)
+            () -> {
+            GameGui.GameState demoState = GameGui.buildDemoState();
+            startGameSession(demoState, true);
+        }
         );
         splashCanvas = new SplashCanvas(customFont, customFontBold);
 
@@ -106,6 +115,27 @@ public class MainGui extends Application {
         mainStage.centerOnScreen();
         mainStage.show();
 
+        mainStage.setOnCloseRequest(e -> {
+            try {
+                if (discordSyncTimer != null) {
+                    discordSyncTimer.stop();
+                }
+
+                DiscordRpc.clearPresence();
+                DiscordRpc.shutdown();
+
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+
+            Platform.exit();
+            System.exit(0);
+        });
+        
+        DiscordRpc.init();
+        startDiscordAutoSync();
+        syncDiscordPresence();
+
         showSplashOverlay();
     }
 
@@ -113,6 +143,9 @@ public class MainGui extends Application {
 
     private void startGameSession(GameGui.GameState state, boolean debug) {
         if (isTransitionRunning || gameCanvas != null) return;
+
+        activeGameState = state;
+        lastPresenceKey = "";
 
         gameCanvas = new GameGui.GameCanvas(
             mainStage,
@@ -186,11 +219,18 @@ public class MainGui extends Application {
                 gameCanvas = null;
             }
 
+            activeGameState = null;
+            lastPresenceKey = "";
+
+            // Ensure Discord presence is updated when returning to menu
+            syncDiscordPresence();
+
             mainCanvas.setVisible(true);
             mainCanvas.setOpacity(1.0);
             mainCanvas.restartMain();
             mainCanvas.requestFocus();
         });
+
     }
 
     private void animateSwitch(Node oldNode, Node newNode, boolean keepOldNode, Color transitionTint, Runnable afterTransition) {
@@ -254,6 +294,52 @@ public class MainGui extends Application {
     private void bindCanvasToStage(Canvas canvas) {
         canvas.widthProperty().bind(mainStage.widthProperty());
         canvas.heightProperty().bind(mainStage.heightProperty());
+    }
+
+    private void syncDiscordPresence() {
+        if (!DiscordRpc.isReady()) {
+            return;
+        }
+
+        String newPresenceKey;
+
+        if (shopCanvas != null && root.getChildren().contains(shopCanvas)) {
+            newPresenceKey = "shop";
+            if (!newPresenceKey.equals(lastPresenceKey)) {
+                DiscordRpc.setShopPresence();
+                lastPresenceKey = newPresenceKey;
+            }
+            return;
+        }
+
+        if (gameCanvas != null && activeGameState != null) {
+            newPresenceKey = "game:" + activeGameState.scoreToBeat + ":" + activeGameState.playerScore;
+            if (!newPresenceKey.equals(lastPresenceKey)) {
+                DiscordRpc.setGamePresence(activeGameState.scoreToBeat, activeGameState.playerScore);
+                lastPresenceKey = newPresenceKey;
+            }
+            return;
+        }
+
+        newPresenceKey = "menu";
+        if (!newPresenceKey.equals(lastPresenceKey)) {
+            DiscordRpc.setMainMenuPresence();
+            lastPresenceKey = newPresenceKey;
+        }
+    }
+
+    private void startDiscordAutoSync() {
+        discordSyncTimer = new AnimationTimer() {
+            @Override
+            public void handle(long now) {
+                if (now - lastDiscordSyncNs < 1_500_000_000L) {
+                    return;
+                }
+                lastDiscordSyncNs = now;
+                syncDiscordPresence();
+            }
+        };
+        discordSyncTimer.start();
     }
 
     // Splash ----------------------------------------------------------------------------
@@ -626,6 +712,7 @@ public class MainGui extends Application {
                 if (inMinBounds(x, y)) {
                     stage.setIconified(true);
                 } else if (inCloseBounds(x, y)) {
+                    DiscordRpc.shutdown();
                     Platform.exit();
                 } else if (inPlayBounds(x, y)) {
                     onPlay.run();
