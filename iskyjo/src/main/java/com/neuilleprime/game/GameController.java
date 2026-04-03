@@ -1,12 +1,36 @@
 package com.neuilleprime.game;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Consumer;
 
 import com.neuilleprime.jokers.*;
 import com.neuilleprime.jokers.Joker.JokerCategory;
 import com.neuilleprime.game.actions.Action;
+import com.neuilleprime.game.events.GameEventListener;
+import com.neuilleprime.game.events.RoundEndedEvent;
+import com.neuilleprime.game.events.TurnStartedEvent;
 
 public class GameController {
+
+    private static final int[] scorePerRounds = new int[] {
+        20,
+        50,
+        70,
+        120,
+        200,
+        300,
+        500,
+        700,
+        1000,
+        1500,
+        2200,
+        3000,
+        4500,
+        6900,
+        10000
+    };
 
     private ArrayList<Player> players;
     private Pile drawPile;
@@ -29,14 +53,33 @@ public class GameController {
         this.startingPlayerIndex = 0;
         this.round = 1;
         this.isRoundEnding = true;
-        this.roundScore = 50;
+        this.roundScore = scorePerRounds[this.round-1];
         this.moneyPerRound = 3;
         this.lastDrawnCard = null;
         this.gameState = 1;
     }
 
+    // client -> server com
     public void execute(Action action) {
         action.execute(this);
+    }
+
+    // server -> client com
+    private Map<Player, GameEventListener> listeners = new HashMap<>();
+    public void addListener(Player player, GameEventListener listener) {
+        listeners.put(player, listener);
+    }
+
+    // private void notifyPlayer(Player player, Consumer<GameEventListener> event) {
+    //     GameEventListener listener = listeners.get(player);
+    //     if (listener != null) event.accept(listener);
+    // }
+    private void notifyPlayer(Player player, Consumer<GameEventListener> event) {
+        event.accept(listeners.get(player));
+    }
+
+    private void notifyAll(Consumer<GameEventListener> event) {
+        listeners.values().forEach(event::accept);
     }
 
     public Player getCurrentPlayer() {
@@ -92,7 +135,7 @@ public class GameController {
         Card oldCard = player.getDeck().replaceCard(cardCoords, newCard);
         this.discardCard(player, oldCard);
 
-        this.endTurn();
+        // no need to call this.endTurn() because discardCard alr does it
     }
 
     public Card drawCard(String pileName) {
@@ -132,13 +175,20 @@ public class GameController {
         this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.players.size();
 
         if (this.startingPlayerIndex == this.currentPlayerIndex && this.isRoundEnding) {
-            this.prepareNewRound();
+            this.prepareNewRound(false);
         }
+
+        notifyPlayer(getCurrentPlayer(), l -> l.onTurnStarted(new TurnStartedEvent(
+            this.getCurrentPlayer(), this.getDrawPileTop(), this.getDiscardPileTop(), this.round)
+        ));
     }
 
     private void beginRound() {
         this.isRoundEnding = false;
         this.gameState = 1;
+        notifyPlayer(getCurrentPlayer(), l -> l.onTurnStarted(new TurnStartedEvent(
+            getCurrentPlayer(), getDrawPileTop(), getDiscardPileTop(), this.round)
+        ));
     }
 
     private void endRound() {
@@ -146,7 +196,7 @@ public class GameController {
         this.isRoundEnding = true;
     }
 
-    private void prepareNewRound() {
+    private void prepareNewRound(boolean setup) {
         if (!this.isRoundEnding) {
             return;
         }
@@ -212,7 +262,7 @@ public class GameController {
             plr.getDeck().clear();
         }
 
-        if (plrPoints < this.roundScore) {
+        if (plrPoints < this.roundScore && !setup) {
             // player didn't get enough point, he lost this game
             this.gameState = 0;
         }
@@ -230,7 +280,7 @@ public class GameController {
         // System.out.print("Discard pile: ");
         // this.discardPile.printAll();
 
-        System.out.println("\nShuffling draw pile...");
+        System.out.println("Shuffling draw pile...");
         drawPile.shuffle();
         // System.out.print("New draw pile: ");
         // this.drawPile.printAll();
@@ -250,11 +300,21 @@ public class GameController {
             // deck.printAll();
         }
 
-        beginRound();
+        // set up the new score to beat
+        this.roundScore = scorePerRounds[this.round - 1];
+
+        notifyAll(l -> l.onRoundEnded(new RoundEndedEvent(
+            this.roundScore, this.gameState))
+        );
+
+        // only if we didn't lose, we start a new round
+        if (this.gameState > 0) {
+            beginRound();
+        }
     }
 
     public void beginGame() {
-        prepareNewRound();
+        prepareNewRound(true);
     }
 
     public int getGameState() {
