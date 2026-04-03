@@ -25,38 +25,11 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.util.Duration;
 
-/**
- * Main entry point and top-level GUI controller for the Iskyjo application.
- *
- * <p>This class extends {@link Application} and is responsible for bootstrapping the
- * JavaFX window, loading fonts, orchestrating the splash screen, main menu, game session,
- * and shop session, and keeping the Discord Rich Presence in sync with the current
- * application state.</p>
- *
- * <p>Application flow:</p>
- * <ol>
- *   <li>Static initializer loads the custom VCR OSD Mono font (falls back to Comic Sans MS).</li>
- *   <li>{@link #start(Stage)} builds the scene graph and shows the splash overlay.</li>
- *   <li>After the splash finishes (or is skipped), the main menu becomes interactive.</li>
- *   <li>Clicking "Play" calls {@link #startGameSession(GameGui.GameState, boolean)}.</li>
- *   <li>From within the game the shop can be opened via {@link #openShopSession()} and
- *       closed via {@link #closeShopSession()}.</li>
- *   <li>Returning to the menu is handled by {@link #endGameSession()}.</li>
- * </ol>
- */
 public class MainGui extends Application {
 
-    /** Base (regular-weight) instance of the custom application font at 14 pt. */
     private static Font customFont;
-
-    /** Bold-weight instance of the custom application font at 14 pt. */
     private static Font customFontBold;
 
-    /*
-     * Static font loader.
-     * Attempts to load VCR_OSD_MONO.ttf from the classpath.
-     * Falls back to Comic Sans MS if the resource is missing or JavaFX rejects the file.
-     */
     static {
         try {
             var stream = MainGui.class.getResourceAsStream("/Assets/Fonts/VCR_OSD_MONO.ttf");
@@ -75,63 +48,24 @@ public class MainGui extends Application {
         }
     }
 
-    /** The primary application window. */
     private Stage mainStage;
-
-    /** Canvas that renders the main menu. */
     private MainCanvas mainCanvas;
-
-    /** Canvas that renders the startup splash screen. */
     private SplashCanvas splashCanvas;
-
-    /** Root layout node; children are layered via a {@link StackPane}. */
     private StackPane root;
-
-    /**
-     * Full-screen overlay rectangle used during animated scene transitions.
-     * It is normally invisible and is brought to the front only for the duration
-     * of a fade transition to soften the swap between canvases.
-     */
     private Rectangle transitionOverlay;
-
-    /** Canvas responsible for rendering the active game session, or {@code null} when no game is running. */
     private GameGui.GameCanvas gameCanvas;
-
-    /** Canvas responsible for rendering the shop overlay, or {@code null} when the shop is closed. */
     private ShopGui.ShopCanvas shopCanvas;
 
-    /** Timer that drives the splash-screen frame loop. Stopped once the splash finishes or is skipped. */
     private AnimationTimer splashTimer;
-
-    /** {@code true} once the user has clicked to skip the splash animation. */
     private boolean splashSkipped = false;
-
-    /** Guards against overlapping scene transitions; set to {@code true} while an animation is in progress. */
     private boolean isTransitionRunning = false;
-
-    /** The {@link GameGui.GameState} for the currently active game session, or {@code null} when idle. */
     private GameGui.GameState activeGameState;
-
-    /** Timer that periodically calls {@link #syncDiscordPresence()} (~every 1.5 s). */
     private AnimationTimer discordSyncTimer;
-
-    /** Timestamp of the last Discord sync in nanoseconds, used to throttle updates. */
     private long lastDiscordSyncNs = 0L;
-
-    /**
-     * Cache key representing the presence state that was last pushed to Discord.
-     * Compared before each sync to avoid redundant API calls.
-     */
     private String lastPresenceKey = "";
 
     // Startup ----------------------------------------------------------------------------
 
-    /**
-     * JavaFX lifecycle entry point. Builds the scene graph, configures the primary stage,
-     * starts Discord Rich Presence, and shows the splash screen.
-     *
-     * @param primaryStage the window provided by the JavaFX runtime
-     */
     @Override
     public void start(Stage primaryStage) {
         this.mainStage = primaryStage;
@@ -207,13 +141,6 @@ public class MainGui extends Application {
 
     // Session flow ----------------------------------------------------------------------------
 
-    /**
-     * Creates a new game canvas from the given state, fades out the main menu, and fades in
-     * the game view. Does nothing if a transition is already running or a game is already active.
-     *
-     * @param state the initial {@link GameGui.GameState} to play
-     * @param debug {@code true} to enable debug overlays inside the game canvas
-     */
     private void startGameSession(GameGui.GameState state, boolean debug) {
         if (isTransitionRunning || gameCanvas != null) return;
 
@@ -241,11 +168,6 @@ public class MainGui extends Application {
         });
     }
 
-    /**
-     * Opens the shop overlay on top of the current game session.
-     * Creates the {@link ShopGui.ShopCanvas} on first call and reuses it on subsequent calls.
-     * Does nothing if a transition is running or there is no active game session.
-     */
     private void openShopSession() {
         if (isTransitionRunning || gameCanvas == null) return;
 
@@ -271,10 +193,6 @@ public class MainGui extends Application {
         });
     }
 
-    /**
-     * Closes the shop overlay and returns focus to the game canvas.
-     * Does nothing if a transition is running, or if either the shop or game canvas is absent.
-     */
     private void closeShopSession() {
         if (isTransitionRunning || shopCanvas == null || gameCanvas == null) return;
 
@@ -288,12 +206,6 @@ public class MainGui extends Application {
         });
     }
 
-    /**
-     * Terminates the active game (and shop, if open), removes their canvases from the scene,
-     * and returns the application to the animated main menu.
-     * Schedules UI work on the JavaFX application thread via {@link Platform#runLater(Runnable)}.
-     * Does nothing if a transition is already running.
-     */
     private void endGameSession() {
         if (isTransitionRunning) return;
 
@@ -321,26 +233,6 @@ public class MainGui extends Application {
 
     }
 
-    /**
-     * Performs an animated cross-fade between two scene nodes, optionally tinting the screen
-     * with a semi-transparent colour overlay during the swap.
-     *
-     * <p>Sequence:</p>
-     * <ol>
-     *   <li>Fade the tint overlay in (120 ms).</li>
-     *   <li>Fade {@code oldNode} out and {@code newNode} in simultaneously (240 ms each).</li>
-     *   <li>Fade the tint overlay out (160 ms).</li>
-     * </ol>
-     *
-     * @param oldNode        the node currently visible that should fade out
-     * @param newNode        the node that should fade in
-     * @param keepOldNode    if {@code true} the old node remains in the scene graph (opacity
-     *                       restored to 1.0, but hidden if it is the main canvas);
-     *                       if {@code false} it is removed from {@code root}
-     * @param transitionTint the fill colour of the full-screen tint overlay
-     * @param afterTransition optional callback invoked on the JavaFX thread after the animation
-     *                        completes; may be {@code null}
-     */
     private void animateSwitch(Node oldNode, Node newNode, boolean keepOldNode, Color transitionTint, Runnable afterTransition) {
         isTransitionRunning = true;
 
@@ -399,30 +291,11 @@ public class MainGui extends Application {
         transition.play();
     }
 
-    /**
-     * Binds the width and height of {@code canvas} to the current dimensions of
-     * {@link #mainStage} so the canvas always fills the window.
-     *
-     * @param canvas the canvas whose size properties should track the stage
-     */
     private void bindCanvasToStage(Canvas canvas) {
         canvas.widthProperty().bind(mainStage.widthProperty());
         canvas.heightProperty().bind(mainStage.heightProperty());
     }
 
-    /**
-     * Determines the correct Discord Rich Presence state based on which canvas is currently
-     * active and pushes an update only when the state has changed since the last call.
-     *
-     * <p>Priority order:</p>
-     * <ol>
-     *   <li>Shop view → {@link DiscordRpc#setShopPresence()}</li>
-     *   <li>Game view → {@link DiscordRpc#setGamePresence(int, int)}</li>
-     *   <li>Main menu → {@link DiscordRpc#setMainMenuPresence()}</li>
-     * </ol>
-     *
-     * <p>The method is a no-op when {@link DiscordRpc#isReady()} returns {@code false}.</p>
-     */
     private void syncDiscordPresence() {
         if (!DiscordRpc.isReady()) {
             return;
@@ -455,11 +328,6 @@ public class MainGui extends Application {
         }
     }
 
-    /**
-     * Starts an {@link AnimationTimer} that calls {@link #syncDiscordPresence()} approximately
-     * every 1.5 seconds (1 500 000 000 ns). This keeps the Discord presence reasonably fresh
-     * even when game score changes are not explicitly triggering a sync.
-     */
     private void startDiscordAutoSync() {
         discordSyncTimer = new AnimationTimer() {
             @Override
@@ -476,14 +344,6 @@ public class MainGui extends Application {
 
     // Splash ----------------------------------------------------------------------------
 
-    /**
-     * Attaches the splash canvas animation loop to the scene and starts playing it.
-     * The splash consists of a fade-in, hold, and fade-out phase driven by
-     * {@link SplashCanvas#nextFrame()}. During the fade-out phase the main canvas is
-     * gradually revealed via {@link MainCanvas#setRevealProgress(float)}.
-     *
-     * <p>A mouse press on the root pane at any point skips the animation immediately.</p>
-     */
     private void showSplashOverlay() {
         splashSkipped = false;
 
@@ -528,10 +388,6 @@ public class MainGui extends Application {
         splashTimer.start();
     }
 
-    /**
-     * Immediately jumps past the splash animation: stops the splash timer, fully reveals the
-     * main canvas, removes the splash canvas from the scene, and starts the main menu loop.
-     */
     private void skipSplash() {
         if (splashTimer != null) {
             splashTimer.stop();
@@ -547,68 +403,27 @@ public class MainGui extends Application {
         mainStage.requestFocus();
     }
 
-    /**
-     * Clamps a {@code double} value to the range [0.0, 1.0].
-     *
-     * @param v the value to clamp
-     * @return the clamped value
-     */
     private static double clamp(double v) {
         return Math.max(0.0, Math.min(1.0, v));
     }
 
-    /**
-     * Application entry point. Delegates to {@link Application#launch(String...)}.
-     *
-     * @param args command-line arguments (not used)
-     */
     public static void main(String[] args) {
         launch(args);
     }
 
     // Splash canvas ----------------------------------------------------------------------------
 
-    /**
-     * Full-screen canvas that renders the studio splash screen shown at application startup.
-     *
-     * <p>The animation is divided into three phases driven by an external frame counter:</p>
-     * <ol>
-     *   <li><b>Fade-in</b> ({@value #FADE_IN_FRAMES} frames) – alpha goes from 0 → 1.</li>
-     *   <li><b>Hold</b> ({@value #HOLD_FRAMES} frames) – alpha stays at 1.</li>
-     *   <li><b>Fade-out</b> ({@value #FADE_OUT_FRAMES} frames) – alpha goes from 1 → 0.</li>
-     * </ol>
-     *
-     * <p>The caller advances the frame counter by calling {@link #nextFrame()} once per
-     * render tick and then calls {@link #render()} to draw the current frame.</p>
-     */
     static class SplashCanvas extends Canvas {
-        /** Number of frames for the alpha fade-in phase. */
         private static final int FADE_IN_FRAMES = 40;
-
-        /** Number of frames the splash is held at full opacity. */
         private static final int HOLD_FRAMES = 100;
-
-        /** Number of frames for the alpha fade-out phase. */
         private static final int FADE_OUT_FRAMES = 40;
 
-        /** Current frame index, incremented by {@link #nextFrame()}. */
         private int frame = 0;
 
-        /** Studio logo image, or {@code null} if the asset failed to load. */
         private final Image logo;
-
-        /** Large bold font used for the studio/team name labels. */
         private final Font mainFont;
-
-        /** Smaller regular font used for the subtitle labels beneath the studio names. */
         private final Font subFont;
 
-        /**
-         * Constructs the splash canvas and loads the NP_logo asset.
-         *
-         * @param baseFont     the application base font (used to derive the splash fonts)
-         * @param baseFontBold the bold variant of the application base font
-         */
         SplashCanvas(Font baseFont, Font baseFontBold) {
             Image img = null;
             try {
@@ -624,19 +439,10 @@ public class MainGui extends Application {
             subFont = Font.font(baseFont.getFamily(), FontWeight.NORMAL, 18);
         }
 
-        /**
-         * Advances the internal frame counter by one. Must be called exactly once per
-         * render tick before calling {@link #render()}.
-         */
         public void nextFrame() {
             frame++;
         }
 
-        /**
-         * Calculates the current opacity of the splash overlay based on the frame counter.
-         *
-         * @return a value in [0.0, 1.0] representing the current alpha
-         */
         public float getAlpha() {
             if (frame <= FADE_IN_FRAMES) {
                 return (float) frame / (float) FADE_IN_FRAMES;
@@ -651,31 +457,14 @@ public class MainGui extends Application {
             return 0.0f;
         }
 
-        /**
-         * Returns {@code true} once all three animation phases have elapsed and the
-         * splash screen can be removed from the scene.
-         *
-         * @return {@code true} if the animation has completed
-         */
         public boolean isFinished() {
             return frame > FADE_IN_FRAMES + HOLD_FRAMES + FADE_OUT_FRAMES;
         }
 
-        /**
-         * Returns {@code true} during the fade-out phase, indicating that the main canvas
-         * should start being revealed in parallel with the splash fading away.
-         *
-         * @return {@code true} if the splash is currently in the fade-out (main-reveal) phase
-         */
         public boolean isMainFrameRevealPhase() {
             return frame > FADE_IN_FRAMES + HOLD_FRAMES;
         }
 
-        /**
-         * Draws the current splash frame onto this canvas. Renders a black background, the
-         * studio logo centred on screen, and two flanking text labels (left and right) at the
-         * opacity returned by {@link #getAlpha()}.
-         */
         public void render() {
             double w = getWidth();
             double h = getHeight();
@@ -726,13 +515,6 @@ public class MainGui extends Application {
             canva.setGlobalAlpha(1.0);
         }
 
-        /**
-         * Measures the rendered pixel width of the given string in the given font.
-         *
-         * @param s the string to measure
-         * @param f the font to use for measurement
-         * @return the width in pixels
-         */
         private double measureText(String s, Font f) {
             Text t = new Text(s);
             t.setFont(f);
@@ -742,138 +524,48 @@ public class MainGui extends Application {
 
     // Main canvas ----------------------------------------------------------------------------
 
-    /**
-     * Canvas that renders the main menu screen, including the animated card-pattern background,
-     * the game title with a gentle float animation, and the Play / Leaderboard buttons.
-     *
-     * <p>The canvas manages its own {@link AnimationTimer} which is started by
-     * {@link #startMain()}, paused by {@link #pauseForGame()}, and restarted by
-     * {@link #restartMain()}. Hover states are tracked internally and drive smooth colour
-     * interpolations via {@link #approach(double, double, double)}.</p>
-     *
-     * <p>Window-control buttons (minimise and close) are drawn in the top-right corner and
-     * handled through hit-test helpers. The close button also shuts down Discord RPC.</p>
-     */
     static class MainCanvas extends Canvas {
-        /** Pixel width of each menu button. */
         private static final int MENU_BUTTON_W = 240;
-
-        /** Pixel height of each menu button. */
         private static final int MENU_BUTTON_H = 65;
-
-        /** Horizontal gap between the two menu buttons. */
         private static final int MENU_BUTTON_GAP = 70;
-
-        /** Width of each card tile used in the scrolling background pattern. */
         private static final int CARD_WIDTH = 82;
-
-        /** Height of each card tile used in the scrolling background pattern. */
         private static final int CARD_HEIGHT = 114;
-
-        /** Gap between card tiles in the scrolling background. */
         private static final int SPACING = 20;
-
-        /** Speed factor applied to the background card scroll animation (pixels per frame). */
         private static final float ANIMATION_SPEED = 1.5f;
-
-        /** Base opacity of the card-pattern background layer. */
         private static final float CARD_OPACITY_BASE = 0.05f;
-
-        /** Hit-box size (width and height) for the window control buttons. */
         private static final int BUTTON_HIT_SIZE = 28;
-
-        /** Top margin from the window edge to the window control buttons. */
         private static final int BUTTON_TOP = 8;
-
-        /** Right margin from the window edge to the close button. */
         private static final int BUTTON_RIGHT = 10;
-
-        /** Horizontal gap between the minimise and close window control buttons. */
         private static final int BUTTON_GAP = 6;
 
-        /** Default background colour of the main menu. */
         private static final Color BG_BASE = Color.web("#1d2b53");
-
-        /** Overlay colour blended in when the Play button is hovered. */
         private static final Color BG_PLAY = Color.web("#1e532c");
-
-        /** Overlay colour blended in when the Leaderboard button is hovered. */
         private static final Color BG_LEADERBOARD = Color.web("#534b1f");
 
-        /** Reference to the primary stage; used for minimise/close actions. */
         private final Stage stage;
-
-        /** Regular-weight application font. */
         private final Font fontBase;
-
-        /** Bold-weight application font. */
         private final Font fontBaseBold;
-
-        /** Callback invoked when the user clicks the Play button. */
         private final Runnable onPlay;
 
-        /** Timer driving the main menu render loop; {@code null} when paused. */
         private AnimationTimer mainTimer;
-
-        /** Frame counter incremented every tick of {@link #mainTimer}. */
         private int mainCounter = 0;
 
-        /** Current reveal progress (0–1) controlling how much of the menu is visible after the splash. */
         private float revealProgress = 0.0f;
-
-        /**
-         * Alpha multiplier for the background layer, animated from 0 → 1 during the menu intro.
-         */
         private float backgroundAlpha = 0.0f;
-
-        /**
-         * Alpha multiplier for the title text, animated from 0 → 1 during the menu intro.
-         */
         private float titleAlpha = 0.0f;
-
-        /**
-         * Alpha multiplier for the menu buttons, animated from 0 → 1 during the menu intro.
-         */
         private float buttonsAlpha = 0.0f;
 
-        /** Card tile image used for the scrolling background, or {@code null} on load failure. */
         private Image cardPattern;
-
-        /** Play button image, or {@code null} on load failure. */
         private Image buttonPlayImg;
-
-        /** Leaderboard button image, or {@code null} on load failure. */
         private Image buttonLeaderboardImg;
 
-        /** {@code true} while the mouse is over the Play button. */
         private boolean hoverPlay = false;
-
-        /** {@code true} while the mouse is over the Leaderboard button. */
         private boolean hoverLeaderboard = false;
-
-        /** {@code true} if the menu intro animation has been skipped by the user. */
         private boolean mainAnimSkipped = false;
 
-        /**
-         * Smoothed hover intensity for the Play button in [0.0, 1.0]; used to blend the
-         * background colour overlay gradually rather than snapping.
-         */
         private double playHoverMix = 0.0;
-
-        /**
-         * Smoothed hover intensity for the Leaderboard button in [0.0, 1.0]; used to blend
-         * the background colour overlay gradually rather than snapping.
-         */
         private double leaderboardHoverMix = 0.0;
 
-        /**
-         * Constructs the main menu canvas, loads assets, and wires up mouse interaction handlers.
-         *
-         * @param stage        the primary stage (used for minimise/close)
-         * @param fontBase     the regular application font
-         * @param fontBaseBold the bold application font
-         * @param onPlay       callback invoked when the Play button is clicked
-         */
         MainCanvas(Stage stage, Font fontBase, Font fontBaseBold, Runnable onPlay) {
             this.stage = stage;
             this.fontBase = fontBase;
@@ -887,10 +579,6 @@ public class MainGui extends Application {
             heightProperty().addListener(o -> render());
         }
 
-        /**
-         * Instantly completes the menu intro animation by jumping all alpha values to 1.0
-         * and re-rendering. Calling this method more than once has no effect.
-         */
         public void skipMainAnim() {
             if (mainAnimSkipped) return;
             mainAnimSkipped = true;
@@ -900,13 +588,6 @@ public class MainGui extends Application {
             render();
         }
 
-        /**
-         * Starts the main menu animation timer. Subsequent calls while the timer is already
-         * running are silently ignored.
-         *
-         * <p>The timer increments {@link #mainCounter} every ~25 ms and smoothly updates alpha
-         * and hover-mix values before calling {@link #render()}.</p>
-         */
         public void startMain() {
             if (mainTimer != null) return;
 
@@ -934,10 +615,6 @@ public class MainGui extends Application {
             mainTimer.start();
         }
 
-        /**
-         * Stops the animation timer so the canvas does not consume CPU while a game session
-         * is active. The canvas remains visible but static.
-         */
         public void pauseForGame() {
             if (mainTimer != null) {
                 mainTimer.stop();
@@ -945,10 +622,6 @@ public class MainGui extends Application {
             }
         }
 
-        /**
-         * Resets all animation state to its initial values and then restarts the menu loop,
-         * producing the full intro animation again. Called when returning from a game session.
-         */
         public void restartMain() {
             pauseForGame();
 
@@ -966,24 +639,11 @@ public class MainGui extends Application {
             startMain();
         }
 
-        /**
-         * Sets the reveal progress, which is a master multiplier applied to all animated
-         * alpha values. Used by {@link MainGui} to blend the canvas in while the splash
-         * screen is fading out.
-         *
-         * @param v a value in [0.0, 1.0]; values outside this range are clamped
-         */
         public void setRevealProgress(float v) {
             this.revealProgress = clamp(v);
             render();
         }
 
-        /**
-         * Loads all image assets required by the main menu (card background pattern, play
-         * button, and leaderboard button) from the classpath. Missing or unreadable assets
-         * are logged to {@code System.out} and the corresponding fields remain {@code null};
-         * the render method handles a {@code null} image gracefully.
-         */
         private void loadAssets() {
             try {
                 var url = MainGui.class.getResource("/Assets/Cards/card_bg.png");
@@ -1010,16 +670,6 @@ public class MainGui extends Application {
 
         // Interaction ----------------------------------------------------------------------------
 
-        /**
-         * Registers all mouse event handlers on this canvas:
-         * <ul>
-         *   <li>{@code onMouseMoved} – updates hover flags and cursor.</li>
-         *   <li>{@code onMouseExited} – clears hover flags.</li>
-         *   <li>{@code onMousePressed} – reserved for future use.</li>
-         *   <li>{@code onMouseClicked} – handles button actions (skip intro, minimise,
-         *       close, play, leaderboard).</li>
-         * </ul>
-         */
         private void initInteraction() {
             setOnMouseMoved(e -> {
                 double x = e.getX();
@@ -1074,55 +724,24 @@ public class MainGui extends Application {
 
         // Hitboxes ----------------------------------------------------------------------------
 
-        /**
-         * Returns the left edge X coordinate of the close button's hit area.
-         *
-         * @return pixel X of the close button
-         */
         private double closeX() {
             return getWidth() - BUTTON_RIGHT - BUTTON_HIT_SIZE;
         }
 
-        /**
-         * Returns the left edge X coordinate of the minimise button's hit area.
-         *
-         * @return pixel X of the minimise button
-         */
         private double minX() {
             return getWidth() - BUTTON_RIGHT - BUTTON_HIT_SIZE - BUTTON_GAP - BUTTON_HIT_SIZE;
         }
 
-        /**
-         * Tests whether the point ({@code x}, {@code y}) is within the close button's hit area.
-         *
-         * @param x mouse X coordinate in canvas space
-         * @param y mouse Y coordinate in canvas space
-         * @return {@code true} if the point is inside the close button
-         */
         private boolean inCloseBounds(double x, double y) {
             return x >= closeX() && x <= closeX() + BUTTON_HIT_SIZE
                 && y >= BUTTON_TOP && y <= BUTTON_TOP + BUTTON_HIT_SIZE;
         }
 
-        /**
-         * Tests whether the point ({@code x}, {@code y}) is within the minimise button's hit area.
-         *
-         * @param x mouse X coordinate in canvas space
-         * @param y mouse Y coordinate in canvas space
-         * @return {@code true} if the point is inside the minimise button
-         */
         private boolean inMinBounds(double x, double y) {
             return x >= minX() && x <= minX() + BUTTON_HIT_SIZE
                 && y >= BUTTON_TOP && y <= BUTTON_TOP + BUTTON_HIT_SIZE;
         }
 
-        /**
-         * Tests whether the point ({@code x}, {@code y}) is within the Play button's hit area.
-         *
-         * @param x mouse X coordinate in canvas space
-         * @param y mouse Y coordinate in canvas space
-         * @return {@code true} if the point is inside the Play button
-         */
         private boolean inPlayBounds(double x, double y) {
             double totalW = MENU_BUTTON_W * 2 + MENU_BUTTON_GAP;
             double startX = (getWidth() - totalW) / 2.0;
@@ -1131,14 +750,6 @@ public class MainGui extends Application {
                 && y >= startY && y <= startY + MENU_BUTTON_H;
         }
 
-        /**
-         * Tests whether the point ({@code x}, {@code y}) is within the Leaderboard button's
-         * hit area.
-         *
-         * @param x mouse X coordinate in canvas space
-         * @param y mouse Y coordinate in canvas space
-         * @return {@code true} if the point is inside the Leaderboard button
-         */
         private boolean inLeaderboardBounds(double x, double y) {
             double totalW = MENU_BUTTON_W * 2 + MENU_BUTTON_GAP;
             double startX = (getWidth() - totalW) / 2.0 + MENU_BUTTON_W + MENU_BUTTON_GAP;
@@ -1149,17 +760,6 @@ public class MainGui extends Application {
 
         // Render ----------------------------------------------------------------------------
 
-        /**
-         * Draws a single frame of the main menu onto this canvas. Renders (in order):
-         * <ol>
-         *   <li>Solid base background colour.</li>
-         *   <li>Hover colour overlays for the Play and Leaderboard buttons.</li>
-         *   <li>Scrolling card-tile background pattern.</li>
-         *   <li>Animated, gently bobbing title text.</li>
-         *   <li>Play and Leaderboard buttons (with hover scale effect).</li>
-         * </ol>
-         * All layers respect the current {@link #revealProgress} multiplier.
-         */
         public void render() {
             double w = getWidth();
             double h = getHeight();
@@ -1214,15 +814,6 @@ public class MainGui extends Application {
 
         // Drawing helpers ----------------------------------------------------------------------------
 
-        /**
-         * Draws the scrolling card-tile background pattern. Tiles scroll diagonally using
-         * {@link #mainCounter} as the time base and wrap seamlessly.
-         *
-         * @param canva the graphics context to draw into
-         * @param w     canvas width in pixels
-         * @param h     canvas height in pixels
-         * @param alpha overall opacity multiplier; drawing is skipped when below 0.001
-         */
         private void drawPatternBackground(GraphicsContext canva, double w, double h, float alpha) {
             if (cardPattern == null || alpha <= 0.001f) return;
 
@@ -1240,15 +831,6 @@ public class MainGui extends Application {
             canva.setGlobalAlpha(1.0);
         }
 
-        /**
-         * Fills the entire canvas with a solid colour at the colour's own alpha value.
-         * Skips drawing if the colour's opacity is below 0.01 to avoid unnecessary state changes.
-         *
-         * @param canva the graphics context to draw into
-         * @param c     the fill colour (opacity is used as the global alpha)
-         * @param w     canvas width in pixels
-         * @param h     canvas height in pixels
-         */
         private void drawColorOverlay(GraphicsContext canva, Color c, double w, double h) {
             double a = c.getOpacity();
             if (a < 0.01) return;
@@ -1258,20 +840,6 @@ public class MainGui extends Application {
             canva.setGlobalAlpha(1.0);
         }
 
-        /**
-         * Draws a single menu button at the specified position. If an image is available it is
-         * drawn; otherwise a rounded-rectangle placeholder is rendered. When hovered, the button
-         * is scaled up by 6 % around its centre.
-         *
-         * @param canva  the graphics context to draw into
-         * @param rx     left edge X of the button's logical bounding box
-         * @param ry     top edge Y of the button's logical bounding box
-         * @param rw     width of the button's logical bounding box
-         * @param rh     height of the button's logical bounding box
-         * @param img    the button image to draw, or {@code null} for the placeholder
-         * @param hover  {@code true} if the mouse is currently over this button
-         * @param alpha  overall opacity applied to the button
-         */
         private void drawMenuButton(GraphicsContext canva, double rx, double ry, double rw, double rh,
                                     Image img, boolean hover, float alpha) {
             double finalAlpha = clamp(alpha);
@@ -1294,14 +862,6 @@ public class MainGui extends Application {
             canva.setGlobalAlpha(1.0);
         }
 
-        /**
-         * Linearly interpolates between two {@link Color} values.
-         *
-         * @param from the colour at {@code t = 0}
-         * @param to   the colour at {@code t = 1}
-         * @param t    interpolation factor; clamped to [0.0, 1.0]
-         * @return the blended colour
-         */
         private Color blend(Color from, Color to, double t) {
             double k = clamp(t);
             return new Color(
@@ -1312,48 +872,20 @@ public class MainGui extends Application {
             );
         }
 
-        /**
-         * Measures the rendered pixel width of the given string in the given font.
-         *
-         * @param s the string to measure
-         * @param f the font to use for measurement
-         * @return the width in pixels
-         */
         private double measureText(String s, Font f) {
             Text t = new Text(s);
             t.setFont(f);
             return t.getBoundsInLocal().getWidth();
         }
 
-        /**
-         * Clamps a {@code float} value to the range [0.0, 1.0].
-         *
-         * @param v the value to clamp
-         * @return the clamped value
-         */
         private float clamp(float v) {
             return Math.max(0f, Math.min(1f, v));
         }
 
-        /**
-         * Clamps a {@code double} value to the range [0.0, 1.0].
-         *
-         * @param v the value to clamp
-         * @return the clamped value
-         */
         private double clamp(double v) {
             return Math.max(0.0, Math.min(1.0, v));
         }
 
-        /**
-         * Moves {@code value} toward {@code target} by at most {@code step} per call,
-         * without overshooting. Used to produce smooth hover colour transitions.
-         *
-         * @param value  the current value
-         * @param target the desired value
-         * @param step   the maximum change per call
-         * @return the updated value
-         */
         private double approach(double value, double target, double step) {
             if (value < target) return Math.min(target, value + step);
             return Math.max(target, value - step);

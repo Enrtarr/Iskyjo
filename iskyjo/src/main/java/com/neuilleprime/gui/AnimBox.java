@@ -262,4 +262,77 @@ public class AnimBox {
             return a + (b - a) * t;
         }
     }
+
+        /**
+     * Horizontal card-flip animation.
+     * <p>
+     * The card visually shrinks on the X axis, switches face at mid-animation,
+     * then expands back to full size.
+     */
+    public static class CardFlipAnimation {
+        private final int totalFrames;
+        private int frame;
+        private boolean faceSwitched;
+
+        /**
+         * Creates a new card flip animation.
+         *
+         * @param totalFrames total duration of the flip animation in frames
+         */
+        public CardFlipAnimation(int totalFrames) {
+            this.totalFrames = Math.max(2, totalFrames);
+            this.frame = 0;
+            this.faceSwitched = false;
+        }
+
+        /**
+         * Advances the animation by one frame.
+         */
+        public void tick() {
+            if (!isFinished()) {
+                frame++;
+            }
+        }
+
+        /**
+         * Returns the current horizontal scale of the card.
+         * Value is between 0 and 1.
+         *
+         * @return current X scale
+         */
+        public double getScaleX() {
+            double progress = Math.min(1.0, (double) frame / totalFrames);
+
+            if (progress < 0.5) {
+                double local = progress / 0.5;
+                return 1.0 - Easing.easeInOut((float) local);
+            } else {
+                double local = (progress - 0.5) / 0.5;
+                return Easing.easeInOut((float) local);
+            }
+        }
+
+        /**
+         * Returns whether the card face should switch on this frame.
+         * This only returns {@code true} once, when crossing the halfway point.
+         *
+         * @return {@code true} if the face should now be toggled
+         */
+        public boolean shouldSwitchFace() {
+            if (!faceSwitched && frame >= totalFrames / 2) {
+                faceSwitched = true;
+                return true;
+            }
+            return false;
+        }
+
+        /**
+         * Returns whether the animation is finished.
+         *
+         * @return {@code true} once the animation reached its final frame
+         */
+        public boolean isFinished() {
+            return frame >= totalFrames;
+        }
+    }
 }

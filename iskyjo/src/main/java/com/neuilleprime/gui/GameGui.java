@@ -253,7 +253,7 @@ public class GameGui extends Application {
         private static final double CARD_W = 82.0;
         private static final double CARD_H = 114.0;
         private static final double CARD_GAP = 14.0;
-        private static final double CARD_RADIUS = 9.0;
+        private static final double CARD_RADIUS = 10.0;
 
         private static final double SPECIAL_CARD_W = 70.0;
         private static final double SPECIAL_CARD_H = 98.0;
@@ -295,23 +295,34 @@ public class GameGui extends Application {
         private static final Color CONSU_BORD = Color.web("#2a9c55");
         private static final Color CONSU_LABEL = Color.web("#66e899");
 
-        private static final int DEBUG_ADD_CARD = 0;
-        private static final int DEBUG_REMOVE_CARD = 1;
-        private static final int DEBUG_ADD_JOKER = 2;
-        private static final int DEBUG_REMOVE_JOKER = 3;
-        private static final int DEBUG_ADD_CONSU = 4;
-        private static final int DEBUG_REMOVE_CONSU = 5;
-        private static final int DEBUG_OPEN_SHOP = 6;
+        private static final int DEBUG_FLIP_SELECTED = 0;
+        private static final int DEBUG_ADD_CARD = 1;
+        private static final int DEBUG_REMOVE_CARD = 2;
+        private static final int DEBUG_ADD_JOKER = 3;
+        private static final int DEBUG_REMOVE_JOKER = 4;
+        private static final int DEBUG_ADD_CONSU = 5;
+        private static final int DEBUG_REMOVE_CONSU = 6;
+        private static final int DEBUG_OPEN_SHOP = 7;
+        private static final int DEBUG_SCORE = 8;
 
         private static final String[] DEBUG_BUTTON_LABELS = {
+            "FLIP SELECTED",
             "+ CARD",
             "- CARD",
             "+ JOKER",
             "- JOKER",
             "+ CONSU",
             "- CONSU",
-            "OPEN SHOP"
+            "OPEN SHOP",
+            "EMULATE SCORE"
+            
         };
+
+        private Card debugTargetCard = null;
+        private boolean dragStarted = false;
+        private double pressMouseX = 0.0;
+        private double pressMouseY = 0.0;
+        private static final double DRAG_THRESHOLD = 8.0;
 
         private final Stage stage;
         private final GameState state;
@@ -331,6 +342,25 @@ public class GameGui extends Application {
         private int hoverJokerIndex = -1;
         private int hoverConsumableIndex = -1;
 
+        private Card draggedCard = null;
+        private Card dragOriginCard = null;
+
+        private boolean draggingFromGrid = false;
+        private boolean draggingFromDrawPile = false;
+        private boolean draggingFromDiscardPile = false;
+
+        private int dragSourceCol = -1;
+        private int dragSourceRow = -1;
+
+        private double dragMouseX = 0.0;
+        private double dragMouseY = 0.0;
+        private double dragOffsetX = 0.0;
+        private double dragOffsetY = 0.0;
+
+        private boolean hoverDiscardDropZone = false;
+        private int hoverDropGridCol = -1;
+        private int hoverDropGridRow = -1;
+
         private boolean settingsPanelOpen = false;
 
         private Image cardBackImg = null;
@@ -338,6 +368,7 @@ public class GameGui extends Application {
         private Image backgroundPattern = null;
 
         private final Map<String, Image> tintedOverlayCache = new HashMap<>();
+        private final Map<Card, AnimBox.CardFlipAnimation> activeFlipAnimations = new HashMap<>();
 
         private AnimationTimer animationTimer;
         private long lastFrameTime = -1L;
@@ -418,6 +449,34 @@ public class GameGui extends Application {
             }
         }
 
+
+        private void updateFlipAnimations() {
+            if (activeFlipAnimations.isEmpty()) {
+                return;
+            }
+
+            List<Card> finishedCards = new ArrayList<>();
+
+            for (Map.Entry<Card, AnimBox.CardFlipAnimation> entry : activeFlipAnimations.entrySet()) {
+                Card card = entry.getKey();
+                AnimBox.CardFlipAnimation animation = entry.getValue();
+
+                animation.tick();
+
+                if (animation.shouldSwitchFace()) {
+                    card.faceUp = !card.faceUp;
+                }
+
+                if (animation.isFinished()) {
+                    finishedCards.add(card);
+                }
+            }
+
+            for (Card card : finishedCards) {
+                activeFlipAnimations.remove(card);
+            }
+        }
+
         /**
          * Starts the JavaFX {@link AnimationTimer} that drives continuous rendering.
          * Frames are throttled to a minimum interval of 25 ms (~40 fps) and
@@ -438,6 +497,7 @@ public class GameGui extends Application {
 
                     lastFrameTime = now;
                     animTime += elapsed / 1_000_000_000.0;
+                    updateFlipAnimations();
                     render();
                 }
             };
@@ -808,28 +868,41 @@ public class GameGui extends Application {
 
         // Hitboxes ----------------------------------------------------------------------------
 
-        /**
-         * Returns {@code true} if the given point lies within the draw pile card's hit area.
-         *
-         * @param x cursor X coordinate
-         * @param y cursor Y coordinate
-         * @return {@code true} if the point is over the draw pile card
-         */
         private boolean isInsideDrawCard(double x, double y) {
-            return x >= drawCardX() && x <= drawCardX() + SPECIAL_CARD_W
-                && y >= drawCardY() && y <= drawCardY() + SPECIAL_CARD_H;
+            double panelX = drawPanelX();
+            double panelY = drawPanelY();
+            double panelW = drawPanelW();
+            double panelH = drawPanelH();
+
+            double innerPad = 12.0;
+            double zoneGap = 12.0;
+            double zoneW = panelW - innerPad * 2.0;
+            double zoneH = (panelH - innerPad * 2.0 - zoneGap - 36.0) / 2.0;
+
+            double drawZoneX = panelX + innerPad;
+            double drawZoneY = panelY + 48.0;
+
+            return x >= drawZoneX && x <= drawZoneX + zoneW
+                && y >= drawZoneY && y <= drawZoneY + zoneH;
         }
 
-        /**
-         * Returns {@code true} if the given point lies within the discard pile card's hit area.
-         *
-         * @param x cursor X coordinate
-         * @param y cursor Y coordinate
-         * @return {@code true} if the point is over the discard pile card
-         */
         private boolean isInsideDiscardCard(double x, double y) {
-            return x >= discardCardX() && x <= discardCardX() + SPECIAL_CARD_W
-                && y >= discardCardY() && y <= discardCardY() + SPECIAL_CARD_H;
+            double panelX = drawPanelX();
+            double panelY = drawPanelY();
+            double panelW = drawPanelW();
+            double panelH = drawPanelH();
+
+            double innerPad = 12.0;
+            double zoneGap = 12.0;
+            double zoneW = panelW - innerPad * 2.0;
+            double zoneH = (panelH - innerPad * 2.0 - zoneGap - 36.0) / 2.0;
+
+            double drawZoneY = panelY + 48.0;
+            double discardZoneY = drawZoneY + zoneH + zoneGap;
+            double zoneX = panelX + innerPad;
+
+            return x >= zoneX && x <= zoneX + zoneW
+                && y >= discardZoneY && y <= discardZoneY + zoneH;
         }
 
         /**
@@ -955,6 +1028,203 @@ public class GameGui extends Application {
             return -1;
         }
 
+        private boolean isDraggingDrawCard() {
+            return draggedCard != null && draggingFromDrawPile;
+        }
+
+        private boolean isDraggingDiscardCard() {
+            return draggedCard != null && draggingFromDiscardPile;
+        }
+
+        private boolean isDraggingAnyCard() {
+            return draggedCard != null;
+        }
+
+        private void cancelDrag() {
+            draggedCard = null;
+            dragOriginCard = null;
+            draggingFromGrid = false;
+            draggingFromDrawPile = false;
+            draggingFromDiscardPile = false;
+            dragSourceCol = -1;
+            dragSourceRow = -1;
+            hoverDiscardDropZone = false;
+            hoverDropGridCol = -1;
+            hoverDropGridRow = -1;
+        }
+
+        private void beginGridCardDrag(int col, int row, double mouseX, double mouseY) {
+            Card card = state.grid.get(col, row);
+            if (card == null) return;
+
+            draggedCard = card;
+            dragOriginCard = card;
+            draggingFromGrid = true;
+            draggingFromDrawPile = false;
+            draggingFromDiscardPile = false;
+            dragSourceCol = col;
+            dragSourceRow = row;
+
+            GridMetrics m = gridMetrics();
+            double cardX = m.originX() + col * (m.cardW() + m.gap());
+            double cardY = m.originY() + row * (m.cardH() + m.gap());
+
+            dragOffsetX = mouseX - cardX;
+            dragOffsetY = mouseY - cardY;
+            dragMouseX = mouseX;
+            dragMouseY = mouseY;
+        }
+
+        private void beginDrawPileDrag(double mouseX, double mouseY) {
+            if (state.drawPile == null) return;
+
+            draggedCard = new Card(state.drawPile.value, false);
+            dragOriginCard = state.drawPile;
+            draggingFromGrid = false;
+            draggingFromDrawPile = true;
+            draggingFromDiscardPile = false;
+            dragSourceCol = -1;
+            dragSourceRow = -1;
+
+            dragOffsetX = mouseX - drawCardX();
+            dragOffsetY = mouseY - drawCardY();
+            dragMouseX = mouseX;
+            dragMouseY = mouseY;
+        }
+
+        private void beginDiscardPileDrag(double mouseX, double mouseY) {
+            if (state.discardPile == null) return;
+
+            draggedCard = state.discardPile;
+            dragOriginCard = state.discardPile;
+            draggingFromGrid = false;
+            draggingFromDrawPile = false;
+            draggingFromDiscardPile = true;
+            dragSourceCol = -1;
+            dragSourceRow = -1;
+
+            dragOffsetX = mouseX - discardCardX();
+            dragOffsetY = mouseY - discardCardY();
+            dragMouseX = mouseX;
+            dragMouseY = mouseY;
+        }
+
+        private void dropDraggedGridCardIntoDiscard() {
+            if (!isDraggingGridCard()) return;
+            if (dragSourceCol < 0 || dragSourceRow < 0) return;
+
+            state.grid.set(dragSourceCol, dragSourceRow, null);
+            draggedCard.selected = false;
+            state.discardPile = draggedCard;
+            cancelDrag();
+        }
+
+        private void dropDraggedDrawCardIntoGrid(int col, int row) {
+            if (!isDraggingDrawCard()) return;
+
+            Card oldCard = state.grid.get(col, row);
+            if (oldCard != null) {
+                oldCard.selected = false;
+                state.discardPile = oldCard;
+            }
+
+            draggedCard.faceUp = false;
+            draggedCard.selected = false;
+            state.grid.set(col, row, draggedCard);
+
+            cancelDrag();
+        }
+
+        private void dropDraggedDiscardCardIntoGrid(int col, int row) {
+            if (!isDraggingDiscardCard()) return;
+            if (state.discardPile == null) return;
+
+            Card oldCard = state.grid.get(col, row);
+            if (oldCard != null) {
+                oldCard.selected = false;
+                state.discardPile = oldCard;
+            } else {
+                state.discardPile = null;
+            }
+
+            draggedCard.selected = false;
+            state.grid.set(col, row, draggedCard);
+
+            if (oldCard == null) {
+                state.discardPile = null;
+            }
+
+            cancelDrag();
+        }
+
+        private boolean isDraggingGridCard() {
+            return draggedCard != null && draggingFromGrid;
+        }
+
+
+        private Card getSelectedGridCard() {
+            for (int c = 0; c < state.grid.cols; c++) {
+                for (int r = 0; r < state.grid.rows; r++) {
+                    Card card = state.grid.get(c, r);
+                    if (card != null && card.selected) {
+                        return card;
+                    }
+                }
+            }
+            return null;
+        }
+
+        private int[] getSelectedGridCardPosition() {
+            for (int c = 0; c < state.grid.cols; c++) {
+                for (int r = 0; r < state.grid.rows; r++) {
+                    Card card = state.grid.get(c, r);
+                    if (card != null && card.selected) {
+                        return new int[] {c, r};
+                    }
+                }
+            }
+            return null;
+        }
+
+        private boolean canDiscardSelectedCard() {
+            return getSelectedGridCard() != null || isDraggingGridCard();
+        }
+
+        private boolean canPlaceDrawCard() {
+            return (state.drawPile != null && state.drawPile.selected) || isDraggingDrawCard();
+        }
+
+
+        private void discardSelectedGridCard() {
+            int[] pos = getSelectedGridCardPosition();
+            if (pos == null) return;
+
+            Card card = state.grid.get(pos[0], pos[1]);
+            if (card == null) return;
+
+            state.grid.set(pos[0], pos[1], null);
+            card.selected = false;
+            state.discardPile = card;
+        }
+
+        private void placeDrawCardIntoGrid(int col, int row) {
+            if (state.drawPile == null) return;
+
+            Card drawnCard = state.drawPile;
+            drawnCard.faceUp = false;
+            drawnCard.selected = false;
+
+            Card oldCard = state.grid.get(col, row);
+            if (oldCard != null) {
+                oldCard.selected = false;
+                state.discardPile = oldCard;
+            }
+
+            state.grid.set(col, row, drawnCard);
+            state.drawPile = null;
+        }
+
+
         // Interaction ----------------------------------------------------------------------------
 
         /**
@@ -1032,6 +1302,10 @@ public class GameGui extends Application {
                 double x = e.getX();
                 double y = e.getY();
 
+                if (isDraggingAnyCard()) {
+                    return;
+                }
+
                 if (isInsideSettingsButton(x, y)) {
                     settingsPanelOpen = !settingsPanelOpen;
                     render();
@@ -1057,21 +1331,6 @@ public class GameGui extends Application {
                     return;
                 }
 
-                if (isInsideDrawCard(x, y)) {
-                    onDrawClicked();
-                    return;
-                }
-                if (isInsideDiscardCard(x, y)) {
-                    onDiscardClicked();
-                    return;
-                }
-
-                int[] cell = getGridCellAt(x, y);
-                if (cell != null) {
-                    onGridCellClicked(cell[0], cell[1]);
-                    return;
-                }
-
                 int jokerIndex = getJokerIndexAt(x, y);
                 if (jokerIndex >= 0) {
                     onJokerClicked(jokerIndex);
@@ -1081,6 +1340,99 @@ public class GameGui extends Application {
                 int consumableIndex = getConsumableIndexAt(x, y);
                 if (consumableIndex >= 0) {
                     onConsuClicked(consumableIndex);
+                }
+            });
+
+            setOnMouseReleased(e -> {
+                if (isDraggingGridCard()) {
+                    if (dragStarted && isInsideDiscardCard(e.getX(), e.getY())) {
+                        dropDraggedGridCardIntoDiscard();
+                    } else {
+                        cancelDrag();
+                    }
+                    render();
+                    return;
+                }
+
+                if (isDraggingDrawCard()) {
+                    int[] cell = getGridCellAt(e.getX(), e.getY());
+                    if (dragStarted && cell != null) {
+                        dropDraggedDrawCardIntoGrid(cell[0], cell[1]);
+                    } else {
+                        cancelDrag();
+                    }
+                    render();
+                    return;
+                }
+
+                if (isDraggingDiscardCard()) {
+                    int[] cell = getGridCellAt(e.getX(), e.getY());
+                    if (dragStarted && cell != null) {
+                        dropDraggedDiscardCardIntoGrid(cell[0], cell[1]);
+                    } else {
+                        cancelDrag();
+                    }
+                    render();
+                }
+            });
+
+            setOnMouseDragged(e -> {
+                dragMouseX = e.getX();
+                dragMouseY = e.getY();
+
+                double dx = dragMouseX - pressMouseX;
+                double dy = dragMouseY - pressMouseY;
+                double dist = Math.hypot(dx, dy);
+
+                if (dist >= DRAG_THRESHOLD) {
+                    dragStarted = true;
+                }
+
+                if (isDraggingGridCard()) {
+                    hoverDiscardDropZone = isInsideDiscardCard(dragMouseX, dragMouseY);
+                    hoverDropGridCol = -1;
+                    hoverDropGridRow = -1;
+                    render();
+                    return;
+                }
+
+                if (isDraggingDrawCard() || isDraggingDiscardCard()) {
+                    int[] hoverCell = getGridCellAt(dragMouseX, dragMouseY);
+                    hoverDiscardDropZone = false;
+                    hoverDropGridCol = hoverCell != null ? hoverCell[0] : -1;
+                    hoverDropGridRow = hoverCell != null ? hoverCell[1] : -1;
+                    render();
+                }
+            });
+
+            setOnMousePressed(e -> {
+                double x = e.getX();
+                double y = e.getY();
+
+                dragMouseX = x;
+                dragMouseY = y;
+                pressMouseX = x;
+                pressMouseY = y;
+                dragStarted = false;
+
+                if (state.drawPile != null && isInsideDrawCard(x, y)) {
+                    beginDrawPileDrag(x, y);
+                    return;
+                }
+
+                if (state.discardPile != null && isInsideDiscardCard(x, y)) {
+                    beginDiscardPileDrag(x, y);
+                    return;
+                }
+
+                int[] cell = getGridCellAt(x, y);
+                if (cell != null) {
+                    Card card = state.grid.get(cell[0], cell[1]);
+                    if (card != null) {
+                        debugTargetCard = card;
+                        beginGridCardDrag(cell[0], cell[1], x, y);
+                        render();
+                    }
                 }
             });
 
@@ -1095,6 +1447,19 @@ public class GameGui extends Application {
         }
 
         // Actions ----------------------------------------------------------------------------
+
+        private void startFlip(Card card) {
+            if (card == null) {
+                return;
+            }
+
+            if (activeFlipAnimations.containsKey(card)) {
+                return;
+            }
+
+            activeFlipAnimations.put(card, new AnimBox.CardFlipAnimation(18));
+        }
+
 
         /**
          * Clears the {@code selected} flag on every card in the grid,
@@ -1112,12 +1477,28 @@ public class GameGui extends Application {
             state.consumables.forEach(card -> card.selected = false);
         }
 
-        /**
-         * Called when the player clicks the draw pile card.
-         * Override or extend to implement draw logic; currently logs and re-renders.
-         */
         public void onDrawClicked() {
-            System.out.println("[GameGui] Draw clicked");
+            if (state.drawPile == null) return;
+
+            boolean wasSelected = state.drawPile.selected;
+            deselectAll();
+            state.drawPile.selected = !wasSelected;
+            render();
+        }
+
+        public void onGridCellClicked(int col, int row) {
+            if (isDraggingDrawCard()) {
+                dropDraggedDrawCardIntoGrid(col, row);
+                render();
+                return;
+            }
+
+            Card card = state.grid.get(col, row);
+            if (card == null) return;
+
+            boolean wasSelected = card.selected;
+            deselectAll();
+            card.selected = !wasSelected;
             render();
         }
 
@@ -1130,23 +1511,6 @@ public class GameGui extends Application {
             render();
         }
 
-        /**
-         * Called when the player clicks a cell in the card grid.
-         * Toggles the selection state of the card at the given position;
-         * deselects all other cards first. Does nothing if the cell is empty.
-         *
-         * @param col zero-based column index of the clicked cell
-         * @param row zero-based row index of the clicked cell
-         */
-        public void onGridCellClicked(int col, int row) {
-            Card card = state.grid.get(col, row);
-            if (card == null) return;
-
-            boolean wasSelected = card.selected;
-            deselectAll();
-            card.selected = !wasSelected;
-            render();
-        }
 
         /**
          * Called when the player clicks a joker card in the bottom bar.
@@ -1184,6 +1548,7 @@ public class GameGui extends Application {
          */
         private void performDebugAction(int action) {
             switch (action) {
+                case DEBUG_FLIP_SELECTED ->flipDebugTargetCard();
                 case DEBUG_ADD_CARD -> addDebugCard();
                 case DEBUG_REMOVE_CARD -> removeDebugCard();
                 case DEBUG_ADD_JOKER -> addDebugJoker();
@@ -1191,10 +1556,17 @@ public class GameGui extends Application {
                 case DEBUG_ADD_CONSU -> addDebugConsu();
                 case DEBUG_REMOVE_CONSU -> removeDebugConsu();
                 case DEBUG_OPEN_SHOP -> onOpenShop.run();
+                case DEBUG_SCORE -> debugScore();
                 default -> {
                 }
             }
             render();
+        }
+
+        private void flipDebugTargetCard() {
+            if (debugTargetCard != null) {
+                startFlip(debugTargetCard);
+            }
         }
 
         /**
@@ -1310,6 +1682,10 @@ public class GameGui extends Application {
             return pool[count % pool.length];
         }
 
+        private void debugScore() {
+            
+        }
+
         // Render ----------------------------------------------------------------------------
 
         /**
@@ -1332,6 +1708,7 @@ public class GameGui extends Application {
             drawGrid(gc);
             drawScorePanel(gc);
             drawBottomZones(gc);
+            drawDraggedCard(gc);
             drawSettingsOverlay(gc);
         }
 
@@ -1373,15 +1750,24 @@ public class GameGui extends Application {
             double panelW = m.totalW() + pad * 2.0;
             double panelH = m.totalH() + pad * 2.0;
 
+            boolean dropIntoGridMode = isDraggingDrawCard() || isDraggingDiscardCard();
+
             gc.setFill(GRID_BG);
             gc.fillRoundRect(ox - pad, oy - pad, panelW, panelH, 14, 14);
-            gc.setStroke(ZONE_BORDER);
-            gc.setLineWidth(1.2);
+
+            if (dropIntoGridMode) {
+                gc.setFill(Color.color(ACCENT.getRed(), ACCENT.getGreen(), ACCENT.getBlue(), 0.10));
+                gc.fillRoundRect(ox - pad - 4, oy - pad - 4, panelW + 8, panelH + 8, 16, 16);
+            }
+
+            gc.setStroke(dropIntoGridMode ? ACCENT : ZONE_BORDER);
+            gc.setLineWidth(dropIntoGridMode ? 2.0 : 1.2);
             gc.strokeRoundRect(ox - pad, oy - pad, panelW, panelH, 14, 14);
 
             for (int c = 0; c < state.grid.cols; c++) {
                 for (int r = 0; r < state.grid.rows; r++) {
-                    boolean hovered = (c == hoverGridCol && r == hoverGridRow);
+                    boolean hovered = (c == hoverGridCol && r == hoverGridRow)
+                        || (c == hoverDropGridCol && r == hoverDropGridRow);
                     drawCardSlot(
                         gc,
                         ox + c * (m.cardW() + m.gap()),
@@ -1393,20 +1779,30 @@ public class GameGui extends Application {
                     );
                 }
             }
+
+            if (dropIntoGridMode) {
+                Font hintFont = Font.font(fontBold.getFamily(), FontWeight.BOLD, 26);
+                gc.setFont(hintFont);
+                gc.setFill(Color.color(1, 1, 1, 0.14));
+                drawCenteredText(gc, "PLACE CARD", ox - pad, oy + panelH / 2.0 + 10.0, panelW, hintFont);
+            }
         }
 
-        /**
-         * Draws the draw/discard panel on the left side of the play area.
-         * Renders a rounded panel background, a "DRAW / DISCARD" title, a separator line,
-         * and the two side cards (draw pile and discard pile) with their labels.
-         *
-         * @param gc the {@link GraphicsContext} to draw onto
-         */
         private void drawDrawDiscardPanel(GraphicsContext gc) {
             double x = drawPanelX();
             double y = drawPanelY();
             double w = drawPanelW();
             double h = drawPanelH();
+
+            double innerPad = 12.0;
+            double zoneGap = 12.0;
+            double zoneW = w - innerPad * 2.0;
+            double zoneH = (h - innerPad * 2.0 - zoneGap - 36.0) / 2.0;
+
+            double drawZoneX = x + innerPad;
+            double drawZoneY = y + 48.0;
+            double discardZoneX = drawZoneX;
+            double discardZoneY = drawZoneY + zoneH + zoneGap;
 
             gc.setFill(Color.rgb(13, 20, 43, 0.88));
             gc.fillRoundRect(x, y, w, h, 18, 18);
@@ -1416,6 +1812,7 @@ public class GameGui extends Application {
 
             Font titleFont = Font.font(fontBold.getFamily(), FontWeight.BOLD, 16);
             Font labelFont = Font.font(fontBase.getFamily(), FontWeight.NORMAL, 10);
+            Font bigHintFont = Font.font(fontBold.getFamily(), FontWeight.BOLD, 24);
 
             gc.setFont(titleFont);
             gc.setFill(Color.WHITE);
@@ -1423,15 +1820,47 @@ public class GameGui extends Application {
 
             gc.setStroke(Color.web("#31457f"));
             gc.setLineWidth(1.0);
-            gc.strokeLine(x + 16, y + 44, x + w - 16, y + 44);
+            gc.strokeLine(x + 16, y + 40, x + w - 16, y + 40);
 
-            drawSideCard(gc, drawCardX(), drawCardY(), SPECIAL_CARD_W, SPECIAL_CARD_H, state.drawPile, hoverDraw, "DRAW");
-            drawSideCard(gc, discardCardX(), discardCardY(), SPECIAL_CARD_W, SPECIAL_CARD_H, state.discardPile, hoverDiscard, "DISCARD");
+            boolean drawActive = isDraggingDrawCard() || isDraggingDiscardCard() || hoverDropGridCol >= 0;
+            boolean discardActive = isDraggingGridCard() || hoverDiscardDropZone;
+
+            gc.setFill(Color.rgb(20, 30, 60, drawActive ? 0.95 : 0.72));
+            gc.fillRoundRect(drawZoneX, drawZoneY, zoneW, zoneH, 14, 14);
+            gc.setStroke(drawActive ? ACCENT : Color.web("#38518b"));
+            gc.setLineWidth(drawActive ? 2.0 : 1.0);
+            gc.strokeRoundRect(drawZoneX, drawZoneY, zoneW, zoneH, 14, 14);
+
+            gc.setFill(Color.rgb(20, 30, 60, discardActive ? 0.95 : 0.72));
+            gc.fillRoundRect(discardZoneX, discardZoneY, zoneW, zoneH, 14, 14);
+            gc.setStroke(discardActive ? ACCENT : Color.web("#38518b"));
+            gc.setLineWidth(discardActive ? 2.0 : 1.0);
+            gc.strokeRoundRect(discardZoneX, discardZoneY, zoneW, zoneH, 14, 14);
+
+            double drawCardAreaX = drawZoneX + (zoneW - SPECIAL_CARD_W) / 2.0;
+            double drawCardAreaY = drawZoneY + (zoneH - SPECIAL_CARD_H) / 2.0 + 6.0;
+            double discardCardAreaX = discardZoneX + (zoneW - SPECIAL_CARD_W) / 2.0;
+            double discardCardAreaY = discardZoneY + (zoneH - SPECIAL_CARD_H) / 2.0 + 6.0;
+
+            if (discardActive) {
+                gc.setFont(bigHintFont);
+                gc.setFill(Color.color(1, 1, 1, hoverDiscardDropZone ? 0.55 : 0.20));
+                drawCenteredText(gc, "DISCARD", discardZoneX, discardZoneY + 28, zoneW, bigHintFont);
+            }
+
+            if (drawActive) {
+                gc.setFont(bigHintFont);
+                gc.setFill(Color.color(1, 1, 1, 0.16));
+                drawCenteredText(gc, "PLACE", drawZoneX, drawZoneY + 28, zoneW, bigHintFont);
+            }
+
+            drawSideCard(gc, drawCardAreaX, drawCardAreaY, SPECIAL_CARD_W, SPECIAL_CARD_H, state.drawPile, hoverDraw || isDraggingDrawCard(), "DRAW");
+            drawSideCard(gc, discardCardAreaX, discardCardAreaY, SPECIAL_CARD_W, SPECIAL_CARD_H, state.discardPile, hoverDiscard || hoverDiscardDropZone || isDraggingDiscardCard(), "DISCARD");
 
             gc.setFont(labelFont);
             gc.setFill(TEXT_DIM);
-            drawCenteredText(gc, "DRAW", drawCardX(), drawCardY() + SPECIAL_CARD_H + 14, SPECIAL_CARD_W, labelFont);
-            drawCenteredText(gc, "DISCARD", discardCardX(), discardCardY() + SPECIAL_CARD_H + 14, SPECIAL_CARD_W, labelFont);
+            drawCenteredText(gc, "DRAW", drawZoneX, drawZoneY + zoneH - 8, zoneW, labelFont);
+            drawCenteredText(gc, "DISCARD", discardZoneX, discardZoneY + zoneH - 8, zoneW, labelFont);
         }
 
         /**
@@ -1495,17 +1924,12 @@ public class GameGui extends Application {
 
         }
 
-        /**
-         * Draws the bottom bar containing the joker zone and consumable zone.
-         * Renders the shell for each zone, then lays out the special cards horizontally
-         * within their respective zones. Shows a hint text when a zone is empty.
-         *
-         * @param gc the {@link GraphicsContext} to draw onto
-         */
         private void drawBottomZones(GraphicsContext gc) {
             double zoneY = bottomZoneY();
             double zoneH = bottomZoneH();
-            double bottomPadding = 14.0;
+            double bottomPadding = 18.0;
+            double topPadding = 18.0;
+            double cardY = zoneY + topPadding + 22.0;
 
             gc.setStroke(ZONE_BORDER);
             gc.setLineWidth(1.0);
@@ -1518,7 +1942,6 @@ public class GameGui extends Application {
             } else {
                 double totalW = state.jokers.size() * (SPECIAL_CARD_W + CARD_GAP) - CARD_GAP;
                 double startX = jokerZoneX() + (jokerZoneW() - totalW) / 2.0;
-                double cardY = zoneY + 40.0;
                 for (int i = 0; i < state.jokers.size(); i++) {
                     boolean hovered = (i == hoverJokerIndex);
                     drawSpecialCard(gc, startX + i * (SPECIAL_CARD_W + CARD_GAP), cardY,
@@ -1532,7 +1955,6 @@ public class GameGui extends Application {
             } else {
                 double totalW = state.consumables.size() * (SPECIAL_CARD_W + CARD_GAP) - CARD_GAP;
                 double startX = consumableZoneX() + (consumableZoneW() - totalW) / 2.0;
-                double cardY = zoneY + 40.0;
                 for (int i = 0; i < state.consumables.size(); i++) {
                     boolean hovered = (i == hoverConsumableIndex);
                     drawSpecialCard(gc, startX + i * (SPECIAL_CARD_W + CARD_GAP), cardY,
@@ -1568,6 +1990,23 @@ public class GameGui extends Application {
             gc.setFont(titleFont);
             gc.setFill(titleColor);
             gc.fillText(title, x + 10, y + 16);
+        }
+
+        private void drawDraggedCard(GraphicsContext gc) {
+            if (draggedCard == null) {
+                return;
+            }
+
+            double cardW = isDraggingDrawCard() ? SPECIAL_CARD_W : gridMetrics().cardW();
+            double cardH = isDraggingDrawCard() ? SPECIAL_CARD_H : gridMetrics().cardH();
+
+            double x = dragMouseX - dragOffsetX;
+            double y = dragMouseY - dragOffsetY;
+
+            gc.save();
+            gc.setGlobalAlpha(0.95);
+            drawCardShape(gc, x, y, cardW, cardH, draggedCard, true);
+            gc.restore();
         }
 
         /**
@@ -1828,35 +2267,33 @@ public class GameGui extends Application {
 
             String label = String.valueOf(card.value);
             Color valueColor = cardValueColor(card.value);
-            Font valueFont = Font.font(balatroFont.getFamily(), FontWeight.BOLD, 30);
+            Font valueFont = Font.font(fontBold.getFamily(), FontWeight.BOLD, 32);
             gc.setFont(valueFont);
-            gc.setFill(valueColor);
-            double tw = measureText(label, valueFont);
-            gc.fillText(label, x + (w - tw) / 2.0, y + h / 2.0 + 15.0);
 
-            Font cornerFont = Font.font(balatroFont.getFamily(), FontWeight.NORMAL, 9);
-            gc.setFont(cornerFont);
-            gc.setFill(Color.web("#888888"));
-            gc.fillText(label, x + 5, y + 12);
-            double smallTw = measureText(label, cornerFont);
-            gc.fillText(label, x + w - smallTw - 5, y + h - 5);
+            AnimBox.CardFlipAnimation flipAnimation = activeFlipAnimations.get(card);
+            double textScaleX = 1.0;
+            double textAlpha = 1.0;
+
+            if (flipAnimation != null) {
+                textScaleX = Math.max(0.05, flipAnimation.getScaleX());
+                textAlpha = Math.max(0.0, Math.min(1.0, flipAnimation.getScaleX() * 1.4));
+            }
+
+            double tw = measureText(label, valueFont);
+            double scaledTextW = tw * textScaleX;
+            double textX = x + (w - scaledTextW) / 2.0;
+            double textY = y + h / 2.0 + 11.0;
+
+            gc.save();
+            gc.setGlobalAlpha(textAlpha);
+            gc.translate(x + w / 2.0, 0);
+            gc.scale(textScaleX, 1.0);
+            gc.translate(-(x + w / 2.0), 0);
+            gc.setFill(valueColor);
+            gc.fillText(label, textX, textY);
+            gc.restore();
         }
 
-        /**
-         * Draws a single grid slot, which may be empty or occupied by a card.
-         * Empty slots show a dashed placeholder that scales up on hover.
-         * Occupied slots apply a scale transform based on hover/selected state,
-         * and animate a subtle shake when selected. Selected cards also receive a
-         * glowing accent halo behind them.
-         *
-         * @param gc     the {@link GraphicsContext} to draw onto
-         * @param x      left X of the slot
-         * @param y      top Y of the slot
-         * @param w      slot width
-         * @param h      slot height
-         * @param card   the {@link Card} to render, or {@code null} for an empty slot
-         * @param hovered {@code true} if the cursor is over this slot
-         */
         private void drawCardSlot(GraphicsContext gc, double x, double y,
                                   double w, double h, Card card, boolean hovered) {
             if (card == null) {
@@ -1878,17 +2315,29 @@ public class GameGui extends Application {
             double scale = card.selected ? (hovered ? 1.12 : 1.08) : (hovered ? 1.06 : 1.0);
             double nw = w * scale;
             double nh = h * scale;
-            double shakeX = card.selected ? Math.sin(animTime * 12.0) * 1.5 : 0.0;
-            double shakeY = card.selected ? Math.cos(animTime * 10.0) * 1.2 : 0.0;
+            double shakeX = hovered && !card.selected ? Math.sin(animTime * 6.0) * 1.5 : 0.0;
+            double shakeY = hovered && !card.selected ? Math.cos(animTime * 5.0) * 1.2 : 0.0;
             double nx = x + (w - nw) / 2.0 + shakeX;
             double ny = y + (h - nh) / 2.0 + shakeY;
 
-            if (card.selected) {
-                gc.setFill(Color.color(ACCENT.getRed(), ACCENT.getGreen(), ACCENT.getBlue(), 0.22));
-                gc.fillRoundRect(nx - 5, ny - 5, nw + 10, nh + 10, CARD_RADIUS + 3, CARD_RADIUS + 3);
+            if (isDraggingGridCard() && card == draggedCard) {
+                gc.setFill(CARD_EMPTY);
+                gc.fillRoundRect(x, y, w, h, CARD_RADIUS, CARD_RADIUS);
+                gc.setStroke(Color.web("#2a2a48"));
+                gc.setLineWidth(1.0);
+                gc.strokeRoundRect(x, y, w, h, CARD_RADIUS, CARD_RADIUS);
+                return;
             }
 
-            drawCardShape(gc, nx, ny, nw, nh, card, effectiveHighlight);
+            AnimBox.CardFlipAnimation flipAnimation = activeFlipAnimations.get(card);
+            if (flipAnimation != null) {
+                double flipScaleX = Math.max(0.06, flipAnimation.getScaleX());
+                double flippedW = nw * flipScaleX;
+                double flippedX = nx + (nw - flippedW) / 2.0;
+                drawCardShape(gc, flippedX, ny, flippedW, nh, card, effectiveHighlight);
+            } else {
+                drawCardShape(gc, nx, ny, nw, nh, card, effectiveHighlight);
+            }
         }
 
         /**
