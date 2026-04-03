@@ -39,8 +39,9 @@ The `JAVA PROJECTS` view allows you to manage your dependencies. More details ca
 - [Commun] *Cours de LP2* `Ajoute la valeur de la carte au MULTI si celle-ci est Violette (> 8).`
 - [Commun] *Cours de LO21* `Ajoute la valeur de la carte au MULTI si celle-ci est Rose (5 - 8).`
 - [Commun] *Cours de MT3* `Ajoute la valeur de la carte au MULTI si celle-ci est Verte (1 - 4).`
-- [Peu Commun] *Rattrapage* `Ajoute le double de la valeur de la carte la plus faible tenue en main au MULTI.`
-- [Peu Commun] *Rebranding* `Ajoute ×2 au MULTI si la main ne contient qu'une seule couleur.`
+- [Peu commun] *Rattrapage* `Ajoute le double de la valeur de la carte la plus faible tenue en main au MULTI.`
+- [Peu commun] *Grugeur* `1 relance gratuite par magasin`
+- [Peu commun] *Rebranding* `Ajoute ×2 au MULTI si la main ne contient qu'une seule couleur.`
 - [Rare] *Blessing du Pere Tachi* `Ajoute +1 ligne et +1 colonne à la grille.`
 - [Rare] *Cheatsheet* `Augmentes toutes les probabilités de +1 (1 chances sur 3 -> 2 chances sur 3)`
 - [Legendaire] *Revisions d'annales* `Pour chaque carte de la grille, 1 chances sur 3 de réveler la couleur associé à la plage de valeur`
@@ -58,7 +59,6 @@ The `JAVA PROJECTS` view allows you to manage your dependencies. More details ca
 
 - [Commun] *Café* `Ajoute +5 ECTS à la carte sélectionnée`
 - [Peu Commun] *"La même chose s'il vous plaît"* `Sélectionnez 2 cartes, la 2e carte sélectionnée devient la 1ère`
-- [Passif] *Grugeur* `1 relance gratuite par magasin`
 
 - conso qui rajoute × ECTS sur chaque carte
 - conso qui rajoute × ECTS sur Y cartes
