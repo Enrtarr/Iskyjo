@@ -560,15 +560,15 @@ public final class GameCanvasInteractions {
      */
     void performDebugAction(int action) {
         switch (action) {
-            case owner.DEBUG_FLIP_SELECTED ->flipDebugTargetCard();
-            case owner.DEBUG_ADD_CARD -> addDebugCard();
-            case owner.DEBUG_REMOVE_CARD -> removeDebugCard();
-            case owner.DEBUG_ADD_JOKER -> addDebugJoker();
-            case owner.DEBUG_REMOVE_JOKER -> removeDebugJoker();
-            case owner.DEBUG_ADD_CONSU -> addDebugConsu();
-            case owner.DEBUG_REMOVE_CONSU -> removeDebugConsu();
-            case owner.DEBUG_OPEN_SHOP -> owner.onOpenShop.run();
-            case owner.DEBUG_SCORE -> debugScore();
+            case GameCanvas.DEBUG_FLIP_SELECTED -> flipDebugTargetCard();
+            case GameCanvas.DEBUG_ADD_CARD -> addDebugCard();
+            case GameCanvas.DEBUG_REMOVE_CARD -> removeDebugCard();
+            case GameCanvas.DEBUG_ADD_JOKER -> addDebugJoker();
+            case GameCanvas.DEBUG_REMOVE_JOKER -> removeDebugJoker();
+            case GameCanvas.DEBUG_ADD_CONSU -> addDebugConsu();
+            case GameCanvas.DEBUG_REMOVE_CONSU -> removeDebugConsu();
+            case GameCanvas.DEBUG_OPEN_SHOP -> owner.onOpenShop.run();
+            case GameCanvas.DEBUG_SCORE -> debugScore();
             default -> {
             }
         }
