@@ -646,8 +646,8 @@ public class MainGui extends Application {
 
         private void loadAssets() {
             try {
-                var url = MainGui.class.getResource("/Assets/Cards/Card_bg.png");
-                if (url == null) throw new RuntimeException("Missing asset: /Assets/Cards/Card_bg.png");
+                var url = MainGui.class.getResource("/Assets/Cards/card_bg.png");
+                if (url == null) throw new RuntimeException("Missing asset: /Assets/Cards/card_bg.png");
                 cardPattern = new Image(url.toExternalForm());
             } catch (Exception e) {
                 System.out.println("Failed loading background cards: " + e.getMessage());

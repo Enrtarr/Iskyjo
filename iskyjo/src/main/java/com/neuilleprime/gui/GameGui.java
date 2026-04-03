@@ -412,7 +412,7 @@ public class GameGui extends Application {
             }
 
             try {
-                var resource = GameCanvas.class.getResource("/Assets/Cards/Card_bg.png");
+                var resource = GameCanvas.class.getResource("/Assets/Cards/card_bg.png");
                 if (resource != null) backgroundPattern = new Image(resource.toExternalForm());
             } catch (Exception ignored) {
             }

@@ -21,10 +21,6 @@ import com.jagrosh.discordipc.entities.ActivityType;
  */
 public final class DiscordRpc {
 
-    /**
-     * Replace this with your real Discord application/client ID.
-     * You create it in the Discord Developer Portal.
-     */
     private static final long CLIENT_ID = 1489598331595264123L;
 
     private static IPCClient client;
@@ -127,7 +123,7 @@ public final class DiscordRpc {
             "In the main menu",
             null,
             "logo",
-            "Iskyjo",
+            "by Maaple & Enrtarr",
             null,
             null
         );
