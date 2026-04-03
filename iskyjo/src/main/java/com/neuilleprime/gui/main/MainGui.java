@@ -27,6 +27,7 @@ import javafx.util.Duration;
 
 /**
  * Main application entry point.
+ * <p>
  * This class now focuses on stage lifecycle, screen switching, splash handling,
  * and Discord presence synchronization. Rendering code has been moved to
  * {@link MainCanvas} and {@link SplashCanvas}.
