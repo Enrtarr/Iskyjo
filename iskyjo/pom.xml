@@ -6,7 +6,7 @@
 
     <groupId>com.neuilleprime</groupId>
     <artifactId>iskyjo</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0-Debug ON</version>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
@@ -39,7 +39,7 @@
                 <artifactId>javafx-maven-plugin</artifactId>
                 <version>0.0.8</version>
                 <configuration>
-                    <mainClass>com.neuilleprime.gui.MainGui</mainClass>
+                    <mainClass>com.neuilleprime.gui.main.MainGui</mainClass>
                     <options>
                         <option>--enable-native-access=javafx.graphics</option>
                     </options>
