@@ -16,11 +16,20 @@ import javafx.stage.Stage;
 /**
  * Thin orchestration canvas for the in-game screen.
  *
- * <p>This class now delegates the heavy work to dedicated collaborators:
+ * <p>This class delegates the heavy work to dedicated collaborators:
  * {@link GameCanvasLayout}, {@link GameCanvasRenderer},
  * {@link GameCanvasInteractions}, {@link GameCanvasAnimations}, and
  * {@link GameCanvasGameBridge}. The goal is to keep the canvas focused on
  * lifecycle, shared state, and integration wiring.</p>
+ *
+ * <h2>Highlight state</h2>
+ * <p>Three shared fields track which cards are currently highlighted:</p>
+ * <ul>
+ *   <li>{@link #highlightedCells} – per-cell countdown timers for grid cards.</li>
+ *   <li>{@link #highlightedJokerIndex} / {@link #highlightedJokerTicks} – for the bottom joker bar.</li>
+ *   <li>{@link #highlightedConsumableIndex} / {@link #highlightedConsumableTicks} – for the consumable bar.</li>
+ * </ul>
+ * <p>All highlight entry points live in {@link GameCanvasAnimations}.</p>
  */
 public class GameCanvas extends Canvas {
     static final double TOP_BAR_H = 64.0;
@@ -45,7 +54,7 @@ public class GameCanvas extends Canvas {
     static final double PANEL_X = SETTINGS_BUTTON_X + SETTINGS_BUTTON_SIZE + 10.0;
     static final double PANEL_Y = SETTINGS_BUTTON_Y - 2.0;
     static final double PANEL_W = 260.0;
-    static final double PANEL_H = 330.0;
+    static final double PANEL_H = 370.0;   // increased to accommodate extra debug button
     static final double LEAVE_PAD = 10.0;
     static final double LEAVE_BUTTON_HEIGHT = 32.0;
     static final double DEBUG_BUTTON_HEIGHT = 26.0;
@@ -73,15 +82,27 @@ public class GameCanvas extends Canvas {
     static final javafx.scene.paint.Color CONSU_BORD = javafx.scene.paint.Color.web("#2a9c55");
     static final javafx.scene.paint.Color CONSU_LABEL = javafx.scene.paint.Color.web("#66e899");
 
+    // ── Debug action constants ─────────────────────────────────────────────────
+
     public static final int DEBUG_FLIP_SELECTED = 0;
-    public static final int DEBUG_ADD_CARD = 1;
-    public static final int DEBUG_REMOVE_CARD = 2;
-    public static final int DEBUG_ADD_JOKER = 3;
-    public static final int DEBUG_REMOVE_JOKER = 4;
-    public static final int DEBUG_ADD_CONSU = 5;
-    public static final int DEBUG_REMOVE_CONSU = 6;
-    public static final int DEBUG_OPEN_SHOP = 7;
-    public static final int DEBUG_SCORE = 8;
+    public static final int DEBUG_ADD_CARD      = 1;
+    public static final int DEBUG_REMOVE_CARD   = 2;
+    public static final int DEBUG_ADD_JOKER     = 3;
+    public static final int DEBUG_REMOVE_JOKER  = 4;
+    public static final int DEBUG_ADD_CONSU     = 5;
+    public static final int DEBUG_REMOVE_CONSU  = 6;
+    public static final int DEBUG_OPEN_SHOP     = 7;
+    /**
+     * Emulates a random Skyjo combo appearing in the score-panel feed
+     * and highlights the corresponding grid cells.
+     */
+    public static final int DEBUG_SCORE         = 8;
+    /**
+     * Highlights a random group of grid cells (row / column / diagonal /
+     * anti-diagonal) without adding a combo entry to the feed.
+     * Purely a visual test for the highlight subsystem.
+     */
+    public static final int DEBUG_HIGHLIGHT     = 9;
 
     static final double DRAG_THRESHOLD = 8.0;
 
@@ -94,8 +115,11 @@ public class GameCanvas extends Canvas {
         "+ CONSU",
         "- CONSU",
         "OPEN SHOP",
-        "EMULATE SCORE"
+        "EMULATE SCORE",
+        "HIGHLIGHT GROUP"
     };
+
+    // ── Mutable interaction state ──────────────────────────────────────────────
 
     Card debugTargetCard = null;
     boolean dragStarted = false;
@@ -152,11 +176,42 @@ public class GameCanvas extends Canvas {
     long lastFrameTime = -1L;
     double animTime = 0.0;
 
+    // ── Highlight state ────────────────────────────────────────────────────────
+
+    /**
+     * Per-cell countdown timers (in animation ticks) for grid-card highlights.
+     * Dimensions are [cols][rows]; a positive value means the cell is highlighted.
+     * Allocated lazily in the constructor to match the current grid size.
+     */
+    int[][] highlightedCells;
+
+    /**
+     * Zero-based index of the joker currently highlighted in the bottom bar,
+     * or {@code -1} when no joker is highlighted.
+     */
+    int highlightedJokerIndex = -1;
+
+    /** Remaining highlight ticks for the highlighted joker. */
+    int highlightedJokerTicks = 0;
+
+    /**
+     * Zero-based index of the consumable currently highlighted in the bottom bar,
+     * or {@code -1} when none is highlighted.
+     */
+    int highlightedConsumableIndex = -1;
+
+    /** Remaining highlight ticks for the highlighted consumable. */
+    int highlightedConsumableTicks = 0;
+
+    // ── Collaborators ──────────────────────────────────────────────────────────
+
     final GameCanvasLayout layout;
     final GameCanvasRenderer renderer;
     final GameCanvasInteractions interactions;
     final GameCanvasAnimations animations;
     final GameCanvasGameBridge bridge;
+
+    // ── Constructors ───────────────────────────────────────────────────────────
 
     public GameCanvas(Stage stage, GameState state,
                       Font fontBase, Font fontBold,
@@ -175,6 +230,9 @@ public class GameCanvas extends Canvas {
         this.onOpenShop = onOpenShop;
         this.debugMode = debugMode;
 
+        // Allocate highlight grid matching the current grid dimensions
+        this.highlightedCells = new int[state.grid.cols][state.grid.rows];
+
         this.layout = new GameCanvasLayout(this);
         this.renderer = new GameCanvasRenderer(this);
         this.interactions = new GameCanvasInteractions(this);
@@ -188,6 +246,8 @@ public class GameCanvas extends Canvas {
         widthProperty().addListener((o, a, b) -> render());
         heightProperty().addListener((o, a, b) -> render());
     }
+
+    // ── Public API ─────────────────────────────────────────────────────────────
 
     /** Returns the mutable visual state currently displayed by the canvas. */
     public GameState getState() {

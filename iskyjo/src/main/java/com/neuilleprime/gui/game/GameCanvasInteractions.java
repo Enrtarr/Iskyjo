@@ -558,19 +558,25 @@ public final class GameCanvasInteractions {
      *
      * @param action one of the {@code DEBUG_*} constants (e.g. {@link #owner.DEBUG_ADD_CARD})
      */
+    /**
+     * Dispatches a debug action identified by its constant index to the
+     * appropriate handler method.  Triggers a re-render after the action completes.
+     *
+     * @param action one of the {@code DEBUG_*} constants defined in {@link GameCanvas}
+     */
     void performDebugAction(int action) {
         switch (action) {
             case GameCanvas.DEBUG_FLIP_SELECTED -> flipDebugTargetCard();
-            case GameCanvas.DEBUG_ADD_CARD -> addDebugCard();
-            case GameCanvas.DEBUG_REMOVE_CARD -> removeDebugCard();
-            case GameCanvas.DEBUG_ADD_JOKER -> addDebugJoker();
-            case GameCanvas.DEBUG_REMOVE_JOKER -> removeDebugJoker();
-            case GameCanvas.DEBUG_ADD_CONSU -> addDebugConsu();
-            case GameCanvas.DEBUG_REMOVE_CONSU -> removeDebugConsu();
-            case GameCanvas.DEBUG_OPEN_SHOP -> owner.onOpenShop.run();
-            case GameCanvas.DEBUG_SCORE -> debugScore();
-            default -> {
-            }
+            case GameCanvas.DEBUG_ADD_CARD      -> addDebugCard();
+            case GameCanvas.DEBUG_REMOVE_CARD   -> removeDebugCard();
+            case GameCanvas.DEBUG_ADD_JOKER     -> addDebugJoker();
+            case GameCanvas.DEBUG_REMOVE_JOKER  -> removeDebugJoker();
+            case GameCanvas.DEBUG_ADD_CONSU     -> addDebugConsu();
+            case GameCanvas.DEBUG_REMOVE_CONSU  -> removeDebugConsu();
+            case GameCanvas.DEBUG_OPEN_SHOP     -> owner.onOpenShop.run();
+            case GameCanvas.DEBUG_SCORE         -> debugScore();
+            case GameCanvas.DEBUG_HIGHLIGHT     -> debugHighlight();
+            default -> { /* unknown action – ignore */ }
         }
         owner.render();
     }
@@ -694,16 +700,26 @@ public final class GameCanvasInteractions {
         return pool[count % pool.length];
     }
 
+    /**
+     * Debug action: pushes a randomly generated Skyjo combo entry into the score-panel
+     * combo feed and highlights the corresponding grid cells.
+     *
+     * <p>Delegates entirely to {@link GameCanvasAnimations#debugEmulateRandomCombo()}.
+     * Once the game layer exposes real combo-detection results, those results should
+     * call {@link GameCanvasAnimations#pushComboEntry(ComboEntry)} and
+     * {@link GameCanvasAnimations#highlightGridRange(int, int, int, int)} directly.</p>
+     */
     void debugScore() {
-        
+        owner.animations.debugEmulateRandomCombo();
     }
 
-    // Render ----------------------------------------------------------------------------
-
     /**
-     * Main owner.render entry point. Clears the canvas and redraws all UI layers in order:
-     * background, draw/discard panel, card grid, score panel, bottom zones,
-     * window chrome, and the settings overlay.
-     * Does nothing if the canvas has no size yet.
+     * Debug action: highlights a random contiguous group of grid cells
+     * (row / column / diagonal / anti-diagonal) without adding a combo entry to the
+     * score feed.  This is a pure visual test for the highlight subsystem and is
+     * completely independent of game-scoring functions.
      */
+    void debugHighlight() {
+        owner.animations.debugHighlightRandomGroup();
+    }
 }

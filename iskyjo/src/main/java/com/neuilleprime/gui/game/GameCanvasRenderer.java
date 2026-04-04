@@ -96,6 +96,7 @@ public final class GameCanvasRenderer {
             for (int r = 0; r < owner.state.grid.rows; r++) {
                 boolean hovered = (c == owner.hoverGridCol && r == owner.hoverGridRow)
                     || (c == owner.hoverDropGridCol && r == owner.hoverDropGridRow);
+                boolean highlighted = owner.highlightedCells[c][r] > 0;
                 drawCardSlot(
                     gc,
                     ox + c * (m.cardW() + m.gap()),
@@ -103,7 +104,8 @@ public final class GameCanvasRenderer {
                     m.cardW(),
                     m.cardH(),
                     owner.state.grid.get(c, r),
-                    hovered
+                    hovered,
+                    highlighted
                 );
             }
         }
@@ -248,7 +250,7 @@ public final class GameCanvasRenderer {
         gc.setLineWidth(2.0);
         gc.strokeLine(x + 18, ((yPadding + 92) + 40) + 50, x + w - 18, ((yPadding + 92) + 40) + 50);
 
-        
+        drawComboFeed(gc);
 
     }
 
@@ -271,10 +273,12 @@ public final class GameCanvasRenderer {
             double totalW = owner.state.jokers.size() * (owner.SPECIAL_CARD_W + owner.CARD_GAP) - owner.CARD_GAP;
             double startX = owner.layout.jokerZoneX() + (owner.layout.jokerZoneW() - totalW) / 2.0;
             for (int i = 0; i < owner.state.jokers.size(); i++) {
-                boolean hovered = (i == owner.hoverJokerIndex);
+                boolean hovered     = (i == owner.hoverJokerIndex);
+                boolean highlighted = (i == owner.highlightedJokerIndex);
                 drawSpecialCard(gc, startX + i * (owner.SPECIAL_CARD_W + owner.CARD_GAP), cardY,
                     owner.SPECIAL_CARD_W, owner.SPECIAL_CARD_H, owner.state.jokers.get(i),
-                    owner.JOKER_BG, owner.JOKER_BORD, owner.JOKER_LABEL, "J", hovered);
+                    owner.JOKER_BG, owner.JOKER_BORD, owner.JOKER_LABEL, "J",
+                    hovered || highlighted);
             }
         }
 
@@ -284,10 +288,12 @@ public final class GameCanvasRenderer {
             double totalW = owner.state.consumables.size() * (owner.SPECIAL_CARD_W + owner.CARD_GAP) - owner.CARD_GAP;
             double startX = owner.layout.consumableZoneX() + (owner.layout.consumableZoneW() - totalW) / 2.0;
             for (int i = 0; i < owner.state.consumables.size(); i++) {
-                boolean hovered = (i == owner.hoverConsumableIndex);
+                boolean hovered     = (i == owner.hoverConsumableIndex);
+                boolean highlighted = (i == owner.highlightedConsumableIndex);
                 drawSpecialCard(gc, startX + i * (owner.SPECIAL_CARD_W + owner.CARD_GAP), cardY,
                     owner.SPECIAL_CARD_W, owner.SPECIAL_CARD_H, owner.state.consumables.get(i),
-                    owner.CONSU_BG, owner.CONSU_BORD, owner.CONSU_LABEL, "C", hovered);
+                    owner.CONSU_BG, owner.CONSU_BORD, owner.CONSU_LABEL, "C",
+                    hovered || highlighted);
             }
         }
     }
@@ -622,10 +628,34 @@ public final class GameCanvasRenderer {
         gc.restore();
     }
 
+    /**
+     * Overload without the explicit {@code highlighted} parameter.
+     * Delegates to {@link #drawCardSlot(GraphicsContext, double, double, double, double, Card, boolean, boolean)}
+     * with {@code highlighted = false}.
+     */
     void drawCardSlot(GraphicsContext gc, double x, double y,
                               double w, double h, Card card, boolean hovered) {
+        drawCardSlot(gc, x, y, w, h, card, hovered, false);
+    }
+
+    /**
+     * Draws a single card slot in the grid, applying hover, selection, flip, and highlight
+     * scale effects.  When {@code highlighted} is {@code true}, the card is scaled up
+     * slightly and its border glows in the accent colour, independently of the hover state.
+     *
+     * @param gc          the {@link GraphicsContext} to draw onto
+     * @param x           left X of the slot
+     * @param y           top Y of the slot
+     * @param w           nominal slot width
+     * @param h           nominal slot height
+     * @param card        the {@link Card} to draw, or {@code null} for an empty slot
+     * @param hovered     {@code true} if the mouse is currently over this slot
+     * @param highlighted {@code true} if this card belongs to an active combo highlight
+     */
+    void drawCardSlot(GraphicsContext gc, double x, double y,
+                              double w, double h, Card card, boolean hovered, boolean highlighted) {
         if (card == null) {
-            double scale = hovered ? 1.06 : 1.0;
+            double scale = (hovered || highlighted) ? 1.06 : 1.0;
             double nw = w * scale;
             double nh = h * scale;
             double nx = x + (w - nw) / 2.0;
@@ -633,14 +663,17 @@ public final class GameCanvasRenderer {
 
             gc.setFill(owner.CARD_EMPTY);
             gc.fillRoundRect(nx, ny, nw, nh, owner.CARD_RADIUS, owner.CARD_RADIUS);
-            gc.setStroke(hovered ? owner.ACCENT : Color.web("#2a2a48"));
-            gc.setLineWidth(hovered ? 1.8 : 1.0);
+            gc.setStroke((hovered || highlighted) ? owner.ACCENT : Color.web("#2a2a48"));
+            gc.setLineWidth((hovered || highlighted) ? 1.8 : 1.0);
             gc.strokeRoundRect(nx, ny, nw, nh, owner.CARD_RADIUS, owner.CARD_RADIUS);
             return;
         }
 
-        boolean effectiveHighlight = card.selected || hovered;
-        double scale = card.selected ? (hovered ? 1.12 : 1.08) : (hovered ? 1.06 : 1.0);
+        boolean effectiveHighlight = card.selected || hovered || highlighted;
+        double scale = card.selected ? (hovered ? 1.12 : 1.08)
+                     : highlighted  ? 1.10
+                     : hovered      ? 1.06
+                     : 1.0;
         double nw = w * scale;
         double nh = h * scale;
         double shakeX = hovered && !card.selected ? Math.sin(owner.animTime * 6.0) * 1.5 : 0.0;
@@ -779,6 +812,78 @@ public final class GameCanvasRenderer {
         gc.clip();
     }
 
+    /**
+     * Draws the animated combo feed inside the score panel.
+     *
+     * <p>Each {@link ComboEntry} in {@link GameCanvasAnimations#comboFeed} is
+     * rendered as a single line of text.  The newest entry (slot 0) appears just
+     * below the score separator line, is fully white, and slides in from the
+     * right edge of the panel.  Older entries are pushed down, progressively
+     * dimmed, and rendered in a smaller font until they fade out entirely.</p>
+     *
+     * @param gc the {@link GraphicsContext} to draw onto
+     */
+    void drawComboFeed(GraphicsContext gc) {
+        if (owner.animations.comboFeed.isEmpty()) return;
+
+        double panelX = owner.layout.scorePanelX();
+        double panelW = owner.SCORE_PANEL_W;
+
+        // Y just below the separator drawn in drawScorePanel()
+        double yPadding   = owner.layout.playAreaY() + 20.0;
+        double separatorY = ((yPadding + 92) + 40) + 50;
+        double feedStartY = separatorY + 40.0;
+
+        double slotH      = 44.0;
+        double baseFontSz = 16.0;
+
+        for (ComboEntry entry : owner.animations.comboFeed) {
+            double opacity = entry.computeOpacity();
+            if (opacity <= 0.01) continue;
+
+            double fontSize = entry.computeFontSize(baseFontSz);
+            double slotY    = feedStartY + entry.slotIndex * slotH;
+
+            // Slide-in: ease from right edge toward centre
+            double ease      = easeOutQuad(entry.slideProgress);
+            double slideOffX = (1.0 - ease) * (panelW * 0.6);
+
+            Font entryFont = Font.font(
+                owner.fontBase.getFamily(),
+                FontWeight.BOLD,
+                fontSize
+            );
+
+            gc.save();
+            gc.setGlobalAlpha(opacity);
+            gc.setFont(entryFont);
+            gc.setFill(entry.slotIndex == 0
+                ? Color.WHITE
+                : owner.TEXT_DIM);
+
+            String label = entry.displayLabel();
+            double textW = measureText(label, entryFont);
+
+            // Centre within the panel, shifted right during slide-in
+            double textX = panelX + (panelW - textW) / 2.0 + slideOffX;
+            // Clamp so text never slides fully off the left edge
+            textX = Math.max(panelX + 10.0, textX);
+
+            gc.fillText(label, textX, slotY);
+            gc.restore();
+        }
+    }
+
+    /**
+     * Ease-out quadratic function used to smooth the combo-entry slide-in animation.
+     *
+     * @param t input progress in {@code [0.0, 1.0]}
+     * @return eased output value in {@code [0.0, 1.0]}
+     */
+    private double easeOutQuad(double t) {
+        return 1.0 - (1.0 - t) * (1.0 - t);
+    }
+
     // Toolbox ----------------------------------------------------------------------------
 
     /**
@@ -837,4 +942,3 @@ public final class GameCanvasRenderer {
     }
 
 }
-
