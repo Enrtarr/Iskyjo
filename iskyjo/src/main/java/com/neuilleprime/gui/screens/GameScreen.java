@@ -136,7 +136,7 @@ public class GameScreen {
                         drawPileView.prefWidthProperty().bind(leftBar.prefWidthProperty());
                         drawPileView.prefHeightProperty().bind(leftBar.prefHeightProperty());
 
-                        setupPileInteractions(drawPileView, "draw");
+                        if (isLocalPlrTurn) {setupPileInteractions(drawPileView, "draw");}
                         
                         leftBar.getChildren().add(drawPileView);
                     }
@@ -153,7 +153,7 @@ public class GameScreen {
                         discardPileView.prefWidthProperty().bind(leftBar.prefWidthProperty());
                         discardPileView.prefHeightProperty().bind(leftBar.prefHeightProperty());
 
-                        if (GameLogic.gameController.getPlayerCount() > 1) {
+                        if (GameLogic.gameController.getPlayerCount() > 1 && isLocalPlrTurn) {
                             setupPileInteractions(discardPileView, "discard");
                         }
 
@@ -171,7 +171,7 @@ public class GameScreen {
                     discardZoneView.prefWidthProperty().bind(rightBar.prefWidthProperty());
                     discardZoneView.prefHeightProperty().bind(rightBar.prefHeightProperty());
 
-                    setupZoneInteractions(discardZoneView);
+                    if (isLocalPlrTurn) {setupZoneInteractions(discardZoneView);}
 
                     rightBar.getChildren().add(discardZoneView);
 
