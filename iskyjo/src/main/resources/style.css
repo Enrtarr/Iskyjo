@@ -1,0 +1,48 @@
+.root {
+    background-color: #1a1a2e;
+    -fx-background-color: #50508a;
+    font-family: 'VCR OSD Mono';
+    -fx-font-family: 'VCR OSD Mono';
+}
+
+.pile {
+    background-color: #005aa9;
+    -fx-background-color: #005aa9;
+    -fx-background-radius: 5 5 5 5;
+    -fx-padding: 15 15 15 15;
+    -fx-border-color: #160f0f;
+    -fx-border-width: 5;
+    -fx-border-radius: 5 5 5 5;
+}
+
+.pile-title {
+    -fx-text-fill: #ff0000;
+}
+
+.card {
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 10, 0, 0, 4);
+}
+
+.card:hover {
+    -fx-effect: dropshadow(gaussian, rgba(255,255,255,0.3), 15, 0, 0, 0);
+}
+
+.score-label {
+    font-size: 24px;
+    -fx-font-size: 24px;
+    -fx-text-fill: #e0e0e0;
+}
+
+.action-button {
+    background-color: transparent;
+    -fx-background-color: transparent;
+    border-color: transparent;
+    -fx-border-color: transparent;
+    padding: 0;
+    -fx-padding: 0;
+}
+
+.action-button:hover {
+    opacity: 0.85;
+    -fx-opacity: 0.85;
+}
