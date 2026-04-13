@@ -12,7 +12,8 @@ import com.neuilleprime.game.events.TurnStartedEvent;
 import com.neuilleprime.gui.components.CardView;
 import com.neuilleprime.gui.components.DeckView;
 import com.neuilleprime.gui.components.PileTopView;
-import com.neuilleprime.gui.components.ZoneView;
+import com.neuilleprime.gui.components.TopTextView;
+import com.neuilleprime.gui.components.VZoneView;
 import com.neuilleprime.gui.utils.GameLogic;
 import com.neuilleprime.gui.utils.ScreenManager;
 
@@ -67,7 +68,7 @@ public class GameScreen {
         HBox topBar = new HBox();
         topBar.setAlignment(Pos.CENTER);
         // topBar.prefWidthProperty().bind(scene.widthProperty().multiply(1));
-        // topBar.prefHeightProperty().bind(scene.heightProperty().multiply(1));
+        topBar.prefHeightProperty().bind(scene.heightProperty().multiply(.1));
 
         HBox bottomBar = new HBox();
         bottomBar.setAlignment(Pos.CENTER);
@@ -99,32 +100,33 @@ public class GameScreen {
             @Override
             public void onTurnStarted(TurnStartedEvent event) {
                 Platform.runLater(() -> {
-                    // another player is playing, we simply wait
-                    boolean isLocalPlrTurn = true;
-                    if (event.currentPlayer != GameLogic.localPlayer) {
-                        // sm.show("wrongTurn");
-                        // return;
-                        isLocalPlrTurn = false;
-                    }
+                    System.out.println("amogonus");
+                    boolean isLocalPlrTurn = event.currentPlayer == GameLogic.localPlayer;
 
+                    topBar.getChildren().clear();
                     leftBar.getChildren().clear();
                     rightBar.getChildren().clear();
                     centerBar.getChildren().clear();
 
                     // for testing purposes, should be removed in the future
+                    System.out.println("Current deck:");
                     event.currentPlayer.getDeck().printAll();
 
-                    // player deck, centered in the middle of the window
-                    DeckView deckView = new DeckView(event.currentPlayer.getDeck());
-                    // deckView.prefWidthProperty().bind(centerBar.prefWidthProperty().multiply(0.4));
-                    // deckView.prefHeightProperty().bind(centerBar.prefHeightProperty().multiply(0.6));
-                    deckView.prefWidthProperty().bind(centerBar.widthProperty().multiply(0.4));
-                    deckView.prefHeightProperty().bind(centerBar.heightProperty().multiply(0.6));
+                    // top bar, displaying info
+                    Label playerTurnLabel = new TopTextView(event.currentPlayer.getName()+"'s turn", .3);
+                    Label roundLabel = new TopTextView("Round "+event.round, .3);
+                    Label roundScoreLabel = new TopTextView("Score to beat: "+event.roundScore, .3);
 
-                    deckView.setOnRebuild(() -> setupDeckInteractions(deckView));
-                    setupDeckInteractions(deckView);
+                    playerTurnLabel.prefWidthProperty().bind(topBar.prefWidthProperty());
+                    playerTurnLabel.prefHeightProperty().bind(topBar.prefHeightProperty());
+                    roundLabel.prefWidthProperty().bind(topBar.prefWidthProperty());
+                    roundLabel.prefHeightProperty().bind(topBar.prefHeightProperty());
+                    roundScoreLabel.prefWidthProperty().bind(topBar.prefWidthProperty());
+                    roundScoreLabel.prefHeightProperty().bind(topBar.prefHeightProperty());
 
-                    centerBar.getChildren().add(deckView);
+                    topBar.spacingProperty().bind(topBar.widthProperty().multiply(.05));
+                    
+                    topBar.getChildren().addAll(playerTurnLabel, roundLabel, roundScoreLabel);
 
                     // both piles, with regards to single/multi-player
                     boolean isDrawPileEmpty = event.drawPileTop == null;
@@ -167,13 +169,24 @@ public class GameScreen {
                     }
 
                     // discard zone
-                    ZoneView discardZoneView = new ZoneView("Discard");
+                    VZoneView discardZoneView = new VZoneView("Discard");
                     discardZoneView.prefWidthProperty().bind(rightBar.prefWidthProperty());
                     discardZoneView.prefHeightProperty().bind(rightBar.prefHeightProperty());
 
                     if (isLocalPlrTurn) {setupZoneInteractions(discardZoneView);}
 
                     rightBar.getChildren().add(discardZoneView);
+
+                    // player deck, centered in the middle of the window
+                    DeckView deckView = new DeckView(event.currentPlayer.getDeck());
+                    deckView.prefWidthProperty().bind(centerBar.widthProperty().multiply(0.4));
+                    deckView.prefHeightProperty().bind(centerBar.heightProperty().multiply(0.6));
+
+                    // making sure the deck can still be d&d/clicked, even when resized
+                    deckView.setOnRebuild(() -> setupDeckInteractions(deckView));
+                    setupDeckInteractions(deckView);
+
+                    centerBar.getChildren().add(deckView);
 
                     // update all the elements we just added
                     root.setLeft(leftBar);
@@ -188,9 +201,13 @@ public class GameScreen {
             public void onRoundEnded(RoundEndedEvent event) {
                 Platform.runLater(() -> {
                     if (event.gameState == 0) {
+                        System.out.println("sad2");
                         sm.show("gameover");
                     } else {
-                        // roundLabel.setText("Round " + (event.roundScore));
+                        if (!event.setup) {
+                            // (we only show the result if this wasn't the setup (= the 1st round))
+                            sm.show("result");
+                        }
                     }
                 });
             }
@@ -303,7 +320,7 @@ public class GameScreen {
         }
     }
 
-    private void setupZoneInteractions(ZoneView zoneView) {
+    private void setupZoneInteractions(VZoneView zoneView) {
         zoneView.setOnDragOver(e -> {
             if (e.getGestureSource() != zoneView 
                     && e.getDragboard().hasString() 

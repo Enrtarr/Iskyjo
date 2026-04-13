@@ -66,6 +66,12 @@ public class Pile {
         }
     }
 
+    public void addCards(ArrayList<Card> cards) {
+        for (Card c : cards) {
+            this.addCard(c);
+        }
+    }
+
     /**
      * Adds a single card with a given value.
      *

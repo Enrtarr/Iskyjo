@@ -34,11 +34,11 @@ public class DeckView extends GridPane {
         });
 
         // styling
-
         this.setAlignment(Pos.CENTER);
     }
 
     // note that this isn't the cleanest design because we rebuild the deck from the ground up
+    // also we should try to change it so we can add an effect when a card is being removed
     private void updateDeckGrid(Number oldVal, Number newVal) {
         // styling
         double cardPadding = newVal.doubleValue() * .05;

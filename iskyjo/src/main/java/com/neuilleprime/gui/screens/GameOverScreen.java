@@ -11,11 +11,11 @@ import javafx.scene.control.Button;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
 
-public class MenuScreen {
+public class GameOverScreen {
 
     private final ScreenManager sm;
 
-    public MenuScreen(ScreenManager sm) {
+    public GameOverScreen(ScreenManager sm) {
         this.sm = sm;
     }
 
@@ -25,19 +25,15 @@ public class MenuScreen {
 
         ImageView logo = new ImageView(AssetLoader.NP_LOGO);
 
-        Button playButton = new Button();
-        playButton.setGraphic(new ImageView(AssetLoader.BUTTON_PLAY));
-        playButton.setStyle("-fx-background-color: transparent;");
-        playButton.setOnAction(e -> {
+        Button menuButton = new Button();
+        menuButton.setGraphic(new ImageView(AssetLoader.BUTTON_PLAY));
+        menuButton.setStyle("-fx-background-color: transparent;");
+        menuButton.setOnAction(e -> {
             GameLogic.gameController.execute(new BeginGameAction());
-            sm.show("game");
+            sm.show("menu");
         });
 
-        Button lbBtn = new Button();
-        lbBtn.setGraphic(new ImageView(AssetLoader.BUTTON_LEADERBOARD));
-        lbBtn.setStyle("-fx-background-color: transparent;");
-
-        root.getChildren().addAll(logo, playButton, lbBtn);
+        root.getChildren().addAll(logo, menuButton);
 
         Scene scene = new Scene(root, 1280, 720);
         scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm());

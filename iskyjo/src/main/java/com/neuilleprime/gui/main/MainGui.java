@@ -1,7 +1,9 @@
 package com.neuilleprime.gui.main;
 
+import com.neuilleprime.gui.screens.GameOverScreen;
 import com.neuilleprime.gui.screens.GameScreen;
 import com.neuilleprime.gui.screens.MenuScreen;
+import com.neuilleprime.gui.screens.ResultScreen;
 import com.neuilleprime.gui.utils.GameLogic;
 import com.neuilleprime.gui.utils.ScreenManager;
 
@@ -30,14 +32,17 @@ public class MainGui extends Application {
         GameScreen debug = new GameScreen(sm);
         MenuScreen menu = new MenuScreen(sm);
         GameScreen game = new GameScreen(sm);
+        GameOverScreen gameover = new GameOverScreen(sm);
+        ResultScreen result = new ResultScreen(sm);
 
         sm.register("debug", debug.buildScene());
         sm.register("menu", menu.buildScene());
         sm.register("game", game.buildScene());
+        sm.register("gameover", gameover.buildScene());
+        sm.register("result", result.buildScene());
 
         Font.loadFont(getClass().getResourceAsStream("/Assets/Fonts/VCR_OSD_MONO.ttf"), 14);
         Font.loadFont(getClass().getResourceAsStream("/Assets/Fonts/balatro.otf"), 14);
-
 
         stage.setTitle("Iskyjo");
         stage.setWidth(1280);

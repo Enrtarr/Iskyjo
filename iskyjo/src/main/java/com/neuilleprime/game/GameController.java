@@ -2,6 +2,7 @@ package com.neuilleprime.game;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
@@ -39,6 +40,7 @@ public class GameController {
     private int startingPlayerIndex;
     private int round;
     private boolean isRoundEnding;
+    private int nbrPlayersReady;
     private int roundScore;
     private int moneyPerRound;
     private Card lastDrawnCard;
@@ -53,6 +55,7 @@ public class GameController {
         this.startingPlayerIndex = 0;
         this.round = 1;
         this.isRoundEnding = true;
+        this.nbrPlayersReady = this.players.size();
         this.roundScore = scorePerRounds[this.round-1];
         this.moneyPerRound = 3;
         this.lastDrawnCard = null;
@@ -65,21 +68,35 @@ public class GameController {
     }
 
     // server -> client com
-    private Map<Player, GameEventListener> listeners = new HashMap<>();
+    // private Map<Player, GameEventListener> listeners = new HashMap<>();
+    // public void addListener(Player player, GameEventListener listener) {
+    //     listeners.put(player, listener);
+    // }
+
+    // // private void notifyPlayer(Player player, Consumer<GameEventListener> event) {
+    // //     GameEventListener listener = listeners.get(player);
+    // //     if (listener != null) event.accept(listener);
+    // // }
+    // private void notifyPlayer(Player player, Consumer<GameEventListener> event) {
+    //     event.accept(listeners.get(player));
+    // }
+
+    // private void notifyAll(Consumer<GameEventListener> event) {
+    //     listeners.values().forEach(event::accept);
+    // }
+    private Map<Player, List<GameEventListener>> listeners = new HashMap<>();
+
     public void addListener(Player player, GameEventListener listener) {
-        listeners.put(player, listener);
+        listeners.computeIfAbsent(player, p -> new ArrayList<>()).add(listener);
     }
 
-    // private void notifyPlayer(Player player, Consumer<GameEventListener> event) {
-    //     GameEventListener listener = listeners.get(player);
-    //     if (listener != null) event.accept(listener);
-    // }
     private void notifyPlayer(Player player, Consumer<GameEventListener> event) {
-        event.accept(listeners.get(player));
+        List<GameEventListener> playerListeners = listeners.get(player);
+        if (playerListeners != null) playerListeners.forEach(event::accept);
     }
 
     private void notifyAll(Consumer<GameEventListener> event) {
-        listeners.values().forEach(event::accept);
+        listeners.values().forEach(list -> list.forEach(event::accept));
     }
 
     public Player getCurrentPlayer() {
@@ -178,25 +195,46 @@ public class GameController {
             this.endRound();
         }
 
-        this.getCurrentPlayer().getDeck().removeColumns();
+        this.discardPile.addCards(this.getCurrentPlayer().getDeck().removeColumns());
 
         this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.players.size();
 
+        // if the round is ending
         if (this.startingPlayerIndex == this.currentPlayerIndex && this.isRoundEnding) {
             this.prepareNewRound(false);
         }
+        else {
+            // else we simply begin a new turn
+            notifyPlayer(getCurrentPlayer(), l -> l.onTurnStarted(new TurnStartedEvent(
+                this.getCurrentPlayer(), this.getDrawPileTop(), this.getDiscardPileTop(), this.round, this.roundScore)
+            ));
+        }
 
-        notifyPlayer(getCurrentPlayer(), l -> l.onTurnStarted(new TurnStartedEvent(
-            this.getCurrentPlayer(), this.getDrawPileTop(), this.getDiscardPileTop(), this.round)
-        ));
+        // notifyPlayer(getCurrentPlayer(), l -> l.onTurnStarted(new TurnStartedEvent(
+        //     this.getCurrentPlayer(), this.getDrawPileTop(), this.getDiscardPileTop(), this.round, this.roundScore)
+        // ));
     }
 
-    private void beginRound() {
+    public void readyUp() {
+        this.nbrPlayersReady += 1;
+        System.out.println("Number of players ready: "+this.nbrPlayersReady+"/"+this.players.size());
+        if (this.nbrPlayersReady >= this.players.size()) {
+            this.nbrPlayersReady = this.players.size();
+            beginRound(false);
+        }
+    }
+
+    private void beginRound(boolean setup) {
         this.isRoundEnding = false;
         this.gameState = 1;
-        notifyPlayer(getCurrentPlayer(), l -> l.onTurnStarted(new TurnStartedEvent(
-            getCurrentPlayer(), getDrawPileTop(), getDiscardPileTop(), this.round)
+
+        // we start a new round from here only if it's the 1st one of the game
+        // actually maybe not, we'll have to see how to implement the shop in here
+        if (setup || this.nbrPlayersReady == this.players.size()) {
+            notifyPlayer(getCurrentPlayer(), l -> l.onTurnStarted(new TurnStartedEvent(
+            getCurrentPlayer(), getDrawPileTop(), getDiscardPileTop(), this.round, this.roundScore)
         ));
+    }
     }
 
     private void endRound() {
@@ -209,15 +247,29 @@ public class GameController {
             return;
         }
 
+        if (setup) {
+            this.currentPlayerIndex = 0;
+            this.startingPlayerIndex = 0;
+            this.round = 1;
+            this.roundScore = scorePerRounds[this.round-1];
+            this.moneyPerRound = 3;
+            this.lastDrawnCard = null;
+            this.gameState = 1;
+        }
+
         System.out.println("\nPreparing new round...");
 
         int plrPoints = 0;
 
+        Map<Player, Deck> playerDecks = new HashMap<>();
+
         for (Player plr : this.players) {
             // AJOUTER LES JOKERS LÀ
 
+            playerDecks.put(plr, plr.getDeck().getFreshDeck());
+
             // Remove full columns
-            plr.getDeck().removeColumns(true);
+            this.discardPile.addCards(plr.getDeck().removeColumns(true));
 
             for (Joker j : plr.getJokers()) {
                 if (j.getCategory() == JokerCategory.DECK) {
@@ -273,6 +325,7 @@ public class GameController {
         if (plrPoints < this.roundScore && !setup) {
             // player didn't get enough point, he lost this game
             this.gameState = 0;
+            System.out.println("sad1");
         }
         else {
             this.gameState = 2;
@@ -290,6 +343,7 @@ public class GameController {
 
         System.out.println("Shuffling draw pile...");
         drawPile.shuffle();
+        drawPile.hideAll();
         // System.out.print("New draw pile: ");
         // this.drawPile.printAll();
 
@@ -308,16 +362,19 @@ public class GameController {
             // deck.printAll();
         }
 
+        System.out.println(this.drawPile.size());
+
         // set up the new score to beat
         this.roundScore = scorePerRounds[this.round - 1];
 
         notifyAll(l -> l.onRoundEnded(new RoundEndedEvent(
-            this.roundScore, this.gameState))
+            this.roundScore, this.gameState, setup, playerDecks))
         );
 
-        // only if we didn't lose, we start a new round
+        // only if we didn't lose, we start a new round once everyone is done shopping
         if (this.gameState > 0) {
-            beginRound();
+            this.nbrPlayersReady = 0;
+            beginRound(setup);
         }
     }
 

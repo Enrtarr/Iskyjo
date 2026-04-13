@@ -49,13 +49,14 @@ public class Deck {
      *
      * @param j Index of the row to remove
      */
-    public void removeRow(int j) {
+    public ArrayList<Card> removeRow(int j) {
         if (this.height.get() != 0) {
-            this.matrix.remove(j);
             this.height.set(this.height.get() - 1);
+            return this.matrix.remove(j);
         }
         else {
             System.out.println("Can not remove row, deck is already empty");
+            return null;
         }
     }
 
@@ -89,15 +90,18 @@ public class Deck {
      *
      * @param i Index of the column to remove
      */
-    public void removeColumn(int i) {
+    public ArrayList<Card> removeColumn(int i) {
         if (this.length.get() != 0) {
+            ArrayList<Card> removed = new ArrayList<>();
             for (int j=0; j<this.matrix.size(); j++) {
-                this.matrix.get(j).remove(i);
+                removed.add(this.matrix.get(j).remove(i));
             }
             this.length.set(this.length.get() - 1);
+            return removed;
         }
         else {
             System.out.println("Deck is already empty");
+            return null;
         }
     }
 
@@ -165,6 +169,18 @@ public class Deck {
 
     public IntegerProperty heightProperty() {
         return this.height;
+    }
+
+    public Deck getFreshDeck() {
+        Deck newDeck = new Deck(this.maxLength, this.maxHeight);
+        for (ArrayList<Card> row : this.matrix) {
+            ArrayList<Card> newRow = new ArrayList<>();
+            for (Card c : row) {
+                newRow.add(new Card(c.getValue(), c.isHidden()));
+            }
+            newDeck.addRow(newRow);
+        }
+        return newDeck;
     }
 
     public boolean hasCardAtCoords(int[] coords) {
@@ -477,8 +493,8 @@ public class Deck {
     /**
      * Removes the full columns made of the same values (by default ignores columns with hidden cards)
      */
-    public void removeColumns() {
-        removeColumns(false);
+    public ArrayList<Card> removeColumns() {
+        return removeColumns(false);
     }
 
     /**
@@ -486,32 +502,33 @@ public class Deck {
      * 
      * @param ignoreHidden Whether or not to remove columns with hidden cards (true=remove)
      */
-    public void removeColumns(boolean ignoreHidden) {
+    public ArrayList<Card> removeColumns(boolean ignoreHidden) {
         // ArrayList<int[]> finalList = new ArrayList<>();
-        for (int j=0;j<this.length.get();j++) {
-            int cur = 0, prev = 0, streak = 0;
-            for (int i=0;i<this.height.get();i++) {
-                cur = this.matrix.get(i).get(j).getValue();
-                if (cur == prev) {
-                    streak++;
+        ArrayList<Card> removed = new ArrayList<>();
+
+        // we need to iteratebackwards to account for remove columns
+        for (int j = this.length.get() - 1; j >= 0; j--) {
+            boolean allSame = true;
+            boolean hasHidden = false;
+            int firstValue = this.matrix.get(0).get(j).getValue();
+
+            for (int i = 0; i < this.height.get(); i++) {
+                Card c = this.matrix.get(i).get(j);
+
+                if (c.isHidden()) {
+                    hasHidden = true;
                 }
-                else {
-                    if (streak+1 == this.height.get()) {
-                        // finalList.add(new int[]{streak+1,prev});
-                        this.removeColumn(j);
-                    }
-                    streak = 0;
+
+                if (c.getValue() != firstValue) {
+                    allSame = false;
+                    break;
                 }
-                if (this.matrix.get(i).get(j).isHidden() && !ignoreHidden) {
-                    streak = 0;
-                }
-                prev = cur;
             }
-            if (streak+1 == this.height.get()) {
-                // finalList.add(new int[]{streak+1,prev});
-                this.removeColumn(j);
+            if (allSame && (ignoreHidden || !hasHidden)) {
+                removed.addAll(this.removeColumn(j));
             }
         }
+        return removed;
     }
 
     // public void clearFullLines() {

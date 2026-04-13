@@ -9,7 +9,9 @@ public class AddXCardJoker extends Joker {
     public AddXCardJoker(int x, boolean isConsu) {
         this.consumable = isConsu;
         this.value = x;
+        this.name = "Add x card joker";
         this.description = "Adds "+this.value+" to all cards";
+        this.price = 0;
     }
 
     public static final JokerCategory CATEGORY = JokerCategory.CARD;

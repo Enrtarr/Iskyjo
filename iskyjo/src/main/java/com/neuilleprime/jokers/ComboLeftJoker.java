@@ -10,8 +10,9 @@ public class ComboLeftJoker extends Joker {
     public ComboLeftJoker(int valueToAdd, int appliesTo) {
         this.valueToAdd = valueToAdd;
         this.appliesTo = appliesTo;
+        this.name = "Combo left joker";
         this.description = "Adds"+valueToAdd+" to the left (amount) part of combos";
-        this.name = "lorem ipsum";
+        this.price = 0;
     }
 
     public static final JokerCategory CATEGORY = JokerCategory.DECK;

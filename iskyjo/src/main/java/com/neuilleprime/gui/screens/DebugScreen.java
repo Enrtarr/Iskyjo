@@ -37,17 +37,17 @@ public class DebugScreen {
         
         leftBar.setAlignment(Pos.CENTER);
         leftBar.prefWidthProperty().bind(scene.widthProperty().multiply(0.1));
-        leftBar.prefHeightProperty().bind(scene.heightProperty().multiply(1));
+        // leftBar.prefHeightProperty().bind(scene.heightProperty().multiply(1));
 
         VBox rightBar = new VBox();
         rightBar.setAlignment(Pos.CENTER);
         rightBar.prefWidthProperty().bind(scene.widthProperty().multiply(0.1));
-        rightBar.prefHeightProperty().bind(scene.heightProperty().multiply(1));
+        // rightBar.prefHeightProperty().bind(scene.heightProperty().multiply(1));
 
         HBox topBar = new HBox();
         topBar.setAlignment(Pos.CENTER);
         topBar.prefWidthProperty().bind(scene.widthProperty().multiply(0.8));
-        topBar.prefHeightProperty().bind(scene.heightProperty().multiply(0.1));
+        // topBar.prefHeightProperty().bind(scene.heightProperty().multiply(0.1));
 
         ImageView logo = new ImageView(AssetLoader.NP_LOGO);
         logo.setPreserveRatio(true);
@@ -85,9 +85,6 @@ public class DebugScreen {
         testDeck.addRow(row3);
 
         DeckView testDeckView = new DeckView(testDeck);
-
-        testDeckView.prefWidthProperty().bind(scene.widthProperty().multiply(0.8));
-        testDeckView.prefHeightProperty().bind(scene.heightProperty().multiply(0.8));
 
         Pile testPile = new Pile(15);
         PileView testPileView = new PileView(testPile);
