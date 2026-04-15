@@ -8,6 +8,7 @@ import com.neuilleprime.game.Pile;
 import com.neuilleprime.gui.components.CardView;
 import com.neuilleprime.gui.components.DeckView;
 import com.neuilleprime.gui.components.PileView;
+import com.neuilleprime.gui.components.VZoneView;
 import com.neuilleprime.gui.utils.AssetLoader;
 import com.neuilleprime.gui.utils.ScreenManager;
 
@@ -94,6 +95,20 @@ public class DebugScreen {
         leftBar.getChildren().addAll(testCardView, testCardView2);
         rightBar.getChildren().add(testPileView);
         topBar.getChildren().add(logo);
+
+        leftBar.getChildren().clear();
+
+        VZoneView moneyView = new VZoneView("Money");
+        moneyView.setText(300+"₣");
+        moneyView.setNameColor("#00a6ff");
+        moneyView.setContentColor("#000000");
+        moneyView.setBackgroundColor("#a92a00");
+        moneyView.setBorderColor("#7c2300");
+        moneyView.setContentSize(.1);
+        moneyView.prefWidthProperty().bind(rightBar.prefWidthProperty());
+        moneyView.prefHeightProperty().bind(rightBar.prefHeightProperty());
+
+        leftBar.getChildren().add(moneyView);
 
         root.setLeft(leftBar);
         root.setRight(rightBar);

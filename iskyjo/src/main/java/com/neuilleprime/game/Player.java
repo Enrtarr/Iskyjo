@@ -225,7 +225,7 @@ public class Player {
 
     /**
      * Sets the player's interests rates.
-     * @param interests the interests to set (in % over b % over the quota)
+     * @param interests the interests to set (in x per % over the quota)
      */
     public void setInterests(int interests) {
         this.interests = interests;

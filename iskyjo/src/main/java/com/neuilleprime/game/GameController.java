@@ -209,10 +209,6 @@ public class GameController {
                 this.getCurrentPlayer(), this.getDrawPileTop(), this.getDiscardPileTop(), this.round, this.roundScore)
             ));
         }
-
-        // notifyPlayer(getCurrentPlayer(), l -> l.onTurnStarted(new TurnStartedEvent(
-        //     this.getCurrentPlayer(), this.getDrawPileTop(), this.getDiscardPileTop(), this.round, this.roundScore)
-        // ));
     }
 
     public void readyUp() {
@@ -308,13 +304,20 @@ public class GameController {
             plrPoints += totalValue;
 
             // if the player beated his fraction of the quota, give him money
+            System.out.println("Original money: "+plr.getMoney());
+            System.out.println("Amount for winning round: "+this.moneyPerRound);
             if (totalValue >= this.roundScore/this.players.size()) {
                 plr.setMoney(plr.getMoney() + this.moneyPerRound);
             }
 
             // the %-age of money to add to the player
-            int moneyToAdd = (((totalValue*100)/(this.roundScore/this.players.size()))-1)*plr.getInterests();
-            plr.setMoney((int) Math.floor(plr.getMoney() + (plr.getMoney() * moneyToAdd)));
+            int moneyToAdd = (((totalValue)/(this.roundScore/this.players.size()))-1)*plr.getInterests();
+            System.out.println("Player went "+(((totalValue)/(this.roundScore/this.players.size()))-1)+"% over the asked amount");
+            System.out.println("Bonus money: "+moneyToAdd);
+            // plr.setMoney((int) Math.floor(plr.getMoney() + (plr.getMoney() * moneyToAdd)));
+            if (moneyToAdd >= 0) {
+                plr.setMoney(plr.getMoney() + moneyToAdd);
+            }
 
             for (Card c : plr.getDeck().getAllCards()) {
                 this.discardPile.addCard(c);

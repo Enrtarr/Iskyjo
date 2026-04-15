@@ -5,4 +5,5 @@ public interface GameEventListener {
     // void onRoundEnded(RoundEndedEvent event);
     default void onTurnStarted(TurnStartedEvent event) {}
     default void onRoundEnded(RoundEndedEvent event) {}
+    default void shopRerolledEvent(ShopRerolledEvent event) {}
 }

@@ -1,10 +1,12 @@
 package com.neuilleprime.gui.screens;
 
-import com.neuilleprime.game.Deck;
 import com.neuilleprime.game.Player;
+import com.neuilleprime.game.actions.ReadyUpAction;
 import com.neuilleprime.game.events.GameEventListener;
 import com.neuilleprime.game.events.RoundEndedEvent;
-import com.neuilleprime.gui.components.DeckView;
+import com.neuilleprime.game.events.ShopRerolledEvent;
+import com.neuilleprime.game.events.TurnStartedEvent;
+import com.neuilleprime.gui.components.VZoneView;
 import com.neuilleprime.gui.utils.AssetLoader;
 import com.neuilleprime.gui.utils.GameLogic;
 import com.neuilleprime.gui.utils.ScreenManager;
@@ -20,17 +22,13 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
-public class ResultScreen {
+public class ShopScreen {
 
     private final ScreenManager sm;
     // private final RoundEndedEvent event;
+    private boolean ready = false;
 
-    public ResultScreen(ScreenManager sm, RoundEndedEvent event) {
-        this.sm = sm;
-        // this.event = event;
-    }
-
-    public ResultScreen(ScreenManager sm) {
+    public ShopScreen(ScreenManager sm) {
         this.sm = sm;
     }
 
@@ -72,8 +70,6 @@ public class ResultScreen {
         // Player player = GameLogic.gameController.getCurrentPlayer();
         Player player = GameLogic.localPlayer;
 
-       
-
         root.setLeft(leftBar);
         root.setRight(rightBar);
         root.setTop(topBar);
@@ -87,46 +83,58 @@ public class ResultScreen {
 
         GameLogic.gameController.addListener(player, new GameEventListener() {
             @Override
+            public void shopRerolledEvent(ShopRerolledEvent event) {
+                Platform.runLater(() -> {
+                    leftBar.getChildren().clear();
+
+                    VZoneView moneyView = new VZoneView("Money");
+                    moneyView.setText(player.getMoney()+"₣");
+                    moneyView.prefWidthProperty().bind(rightBar.prefWidthProperty());
+                    moneyView.prefHeightProperty().bind(rightBar.prefHeightProperty());
+
+                    leftBar.getChildren().add(moneyView);
+                });
+            }
+            
+            @Override
+            public void onTurnStarted(TurnStartedEvent event) {
+                System.out.println("baka");
+                sm.show("game");
+            }
+
+            @Override
             public void onRoundEnded(RoundEndedEvent event) {
                 Platform.runLater(() -> {
-                    System.out.println("sus");
-                    System.out.println("amogus");
 
-                    centerBar.getChildren().clear();
+                    leftBar.getChildren().clear();
 
-                    Deck deck = event.playerDecks.get(player);
+                    VZoneView moneyView = new VZoneView("Money");
+                    moneyView.setText(player.getMoney()+"₣");
+                    moneyView.setNameColor("#00a6ff");
+                    moneyView.setContentColor("#000000");
+                    moneyView.setBackgroundColor("#2da900");
+                    moneyView.setBorderColor("#217c00");
+                    moneyView.setContentSize(.1);
+                    moneyView.prefWidthProperty().bind(rightBar.prefWidthProperty());
+                    moneyView.prefHeightProperty().bind(rightBar.prefHeightProperty());
 
-                    deck.printAll();
+                    leftBar.getChildren().add(moneyView);
 
-                    DeckView deckView = new DeckView(deck);
-                    deckView.prefWidthProperty().bind(centerBar.widthProperty().multiply(0.4));
-                    deckView.prefHeightProperty().bind(centerBar.heightProperty().multiply(0.6));
-
-                    centerBar.getChildren().add(deckView);
-
+                    ready = false; 
                     topBar.getChildren().clear();
-
-                    Button shopButton = new Button();
-                    shopButton.setGraphic(new ImageView(AssetLoader.BUTTON_PLAY));
-                    shopButton.setStyle("-fx-background-color: transparent;");
-                    shopButton.setOnAction(e -> {
-                        sm.show("shop");
+                    Button nextRoundButton = new Button();
+                    nextRoundButton.setGraphic(new ImageView(AssetLoader.BUTTON_PLAY));
+                    nextRoundButton.setStyle("-fx-background-color: transparent;");
+                    nextRoundButton.setOnAction(e -> {
+                        if (!ready) {
+                            GameLogic.gameController.execute(new ReadyUpAction());
+                            ready = true;
+                        }
                     });
-
-                    topBar.getChildren().add(shopButton);
+                    topBar.getChildren().add(nextRoundButton);
                 });
             }
 
-            //
-            //
-            // NE PAS OUBLIER DE FAIRE ÇA DANS LE SHOP APRÈS !!!
-            // 
-            //
-            // @Override
-            // public void onTurnStarted(TurnStartedEvent event) {
-            //     System.out.println("baka");
-            //     sm.show("game");
-            // }
         });
 
         return scene;

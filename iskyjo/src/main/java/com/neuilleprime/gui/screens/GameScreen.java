@@ -170,6 +170,12 @@ public class GameScreen {
 
                     // discard zone
                     VZoneView discardZoneView = new VZoneView("Discard");
+                    discardZoneView.setNameColor("#00a6ff");
+                    discardZoneView.setContentColor("#000000");
+                    discardZoneView.setBackgroundColor("#a92a00");
+                    discardZoneView.setBorderColor("#7c2300");
+                    discardZoneView.setNameSize(.1);
+                    discardZoneView.setContentSize(.3);
                     discardZoneView.prefWidthProperty().bind(rightBar.prefWidthProperty());
                     discardZoneView.prefHeightProperty().bind(rightBar.prefHeightProperty());
 
@@ -354,7 +360,7 @@ public class GameScreen {
                 this.waitingForCardSelection = true;
 
                 // we also tell them by adding an indicator
-                zoneView.setWaiting();
+                zoneView.setText("Please click \non a card to \nreveal it");
 
                 succes = true;
             }

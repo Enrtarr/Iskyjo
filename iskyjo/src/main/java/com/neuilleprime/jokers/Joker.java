@@ -62,7 +62,7 @@ public abstract class Joker {
     public void apply(Pile pile) {};
     public void apply(ArrayList<int[]> combos) {};
 
-    // BIEN PENSER À LE RAJOUTER DANS LES DEUX QUAND ON IMPLÉMENTE UN NOUVEAU JOKER !
+    // BIEN PENSER A RAJOUTER LE JOKER ICI, DANS LE SHOP, ET DANS LE JOKER LUI-MÊME !
     private static final Map<Class<? extends Joker>, JokerRarity> RARITY_MAP = Map.of(
         AddXCardJoker.class, JokerRarity.COMMON,
         AddXDeckJoker.class, JokerRarity.COMMON,

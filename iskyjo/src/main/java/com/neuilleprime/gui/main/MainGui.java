@@ -4,6 +4,7 @@ import com.neuilleprime.gui.screens.GameOverScreen;
 import com.neuilleprime.gui.screens.GameScreen;
 import com.neuilleprime.gui.screens.MenuScreen;
 import com.neuilleprime.gui.screens.ResultScreen;
+import com.neuilleprime.gui.screens.ShopScreen;
 import com.neuilleprime.gui.utils.GameLogic;
 import com.neuilleprime.gui.utils.ScreenManager;
 
@@ -34,12 +35,14 @@ public class MainGui extends Application {
         GameScreen game = new GameScreen(sm);
         GameOverScreen gameover = new GameOverScreen(sm);
         ResultScreen result = new ResultScreen(sm);
+        ShopScreen shop = new ShopScreen(sm);
 
         sm.register("debug", debug.buildScene());
         sm.register("menu", menu.buildScene());
         sm.register("game", game.buildScene());
         sm.register("gameover", gameover.buildScene());
         sm.register("result", result.buildScene());
+        sm.register("shop", shop.buildScene());
 
         Font.loadFont(getClass().getResourceAsStream("/Assets/Fonts/VCR_OSD_MONO.ttf"), 14);
         Font.loadFont(getClass().getResourceAsStream("/Assets/Fonts/balatro.otf"), 14);

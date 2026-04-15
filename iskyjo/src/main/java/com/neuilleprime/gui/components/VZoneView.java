@@ -12,7 +12,13 @@ public class VZoneView extends VBox {
 
     private Label zoneNameLabel;
     private StackPane zoneBox;
-    private Label waitingLabel;
+    private Label contentLabel;
+    private String nameColor;
+    private String contentColor;
+    private String backgroundColor;
+    private String borderColor;
+    private double nameSize;
+    private double contentSize;
 
     public VZoneView(String zoneName) {
         
@@ -21,8 +27,15 @@ public class VZoneView extends VBox {
         // text
         this.zoneNameLabel = new Label(zoneName);
         this.zoneBox = new StackPane();
-        this.waitingLabel = new Label("");
+        this.contentLabel = new Label("");
 
+        this.nameColor = "#00a6ff";
+        this.contentColor = "#000000";
+        this.backgroundColor = "#a92a00";
+        this.borderColor = "#7c2300";
+
+        this.nameSize = .1;
+        this.contentSize = .3;
 
         ImageView zoneBoxTexture = new ImageView(AssetLoader.CARD_TRANSPARENT);
 
@@ -46,46 +59,76 @@ public class VZoneView extends VBox {
         zoneBoxTexture.fitWidthProperty().bind(this.zoneBox.prefWidthProperty());
         zoneBoxTexture.fitHeightProperty().bind(this.zoneBox.prefHeightProperty());
 
-        this.waitingLabel.styleProperty().bind(
-            this.zoneBox.prefWidthProperty().multiply(0.1)
-                .asString("-fx-font-size: %.0fpx; -fx-font-family: 'VCR OSD Mono';")
-        );
-
         // styling
         this.zoneNameLabel.setAlignment(Pos.CENTER);
         this.zoneBox.setAlignment(Pos.CENTER);
-        this.waitingLabel.setAlignment(Pos.CENTER);
+        this.contentLabel.setAlignment(Pos.CENTER);
         this.setAlignment(Pos.CENTER);
 
         // adding the two, in order (from top to bot)
         this.zoneBox.getChildren().add(zoneBoxTexture);
-        this.zoneBox.getChildren().add(waitingLabel);
+        this.zoneBox.getChildren().add(contentLabel);
         this.getChildren().add(this.zoneNameLabel);
         this.getChildren().add(this.zoneBox);
     }
 
     private void updateSize(Number oldVal, Number newVal) {
-        double labelFontSize = newVal.doubleValue() * .1 / this.zoneNameLabel.getText().length() * 15;
+        double nameLabelFontSize = newVal.doubleValue() * this.nameSize / this.zoneNameLabel.getText().length() * 15;
+        boolean isContentEmpty = (this.contentLabel.getText().equals(""));
+        double textLabelFontSize = newVal.doubleValue() * this.contentSize / this.contentLabel.getText().length() * 15;
         double cardPadding = newVal.doubleValue() * .05;
         double borderRadius = newVal.doubleValue() * .05;
         double borderWidth = newVal.doubleValue() * .02;
         this.zoneNameLabel.setStyle(
-            "-fx-font-size: " + labelFontSize + "px;" +
+            "-fx-font-size: " + nameLabelFontSize + "px;" +
             "-fx-font-family: 'VCR OSD Mono';" +
-            "-fx-text-fill: #00a6ff;"
+            "-fx-text-fill: "+this.nameColor+";"
         );
+        if (!isContentEmpty) {
+            this.contentLabel.setStyle(
+            "-fx-font-size: " + textLabelFontSize + "px;" +
+            "-fx-font-family: 'VCR OSD Mono';" +
+            "-fx-text-fill: "+this.contentColor+";"
+            )
+        ;}
         this.zoneBox.setStyle(
-            "-fx-background-color: #a92a00;" +
+            "-fx-background-color: "+this.backgroundColor+";" +
             "-fx-background-radius: "+borderRadius+" "+borderRadius+" "+borderRadius+" "+borderRadius+";" +
             "-fx-padding: "+cardPadding+" "+cardPadding+" "+cardPadding+" "+cardPadding+";" +
-            "-fx-border-color: #7c2300;" +
+            "-fx-border-color: "+this.borderColor+";" +
             "-fx-border-width: "+borderWidth+";" +
             "-fx-border-radius: "+borderRadius+" "+borderRadius+" "+borderRadius+" "+borderRadius+";"
         );
-        // this.waitingLabel.se
     }
 
-    public void setWaiting() {
-        this.waitingLabel.setText("Please click \non a card to \nreveal it");
+    public void setText(String text) {
+        this.contentLabel.setText(text);
+        updateSize(this.prefWidthProperty().getValue(), this.prefWidthProperty().getValue());
+    }
+
+    public void setNameColor(String color) {
+        this.nameColor = color;
+    }
+
+    public void setContentColor(String color) {
+        this.contentColor = color;
+    }
+
+    public void setBackgroundColor(String color) {
+        this.backgroundColor = color;
+    }
+
+    public void setBorderColor(String color) {
+        this.borderColor = color;
+    }
+
+    public void setNameSize(double size) {
+        this.nameSize = size;
+        updateSize(this.prefWidthProperty().getValue(), this.prefWidthProperty().getValue());
+    }
+
+    public void setContentSize(double size) {
+        this.contentSize = size;
+        updateSize(this.prefWidthProperty().getValue(), this.prefWidthProperty().getValue());
     }
 }
