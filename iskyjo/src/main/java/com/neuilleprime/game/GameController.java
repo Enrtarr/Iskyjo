@@ -303,22 +303,42 @@ public class GameController {
             plr.setPoints(plr.getPoints() + totalValue);
             plrPoints += totalValue;
 
+            // we get the money used for interests calculation now
+            int plrMoney = plr.getMoney();
+
             // if the player beated his fraction of the quota, give him money
             // System.out.println("Original money: "+plr.getMoney());
             // System.out.println("Amount for winning round: "+this.moneyPerRound);
             if (totalValue >= this.roundScore/this.players.size()) {
                 plr.setMoney(plr.getMoney() + this.moneyPerRound);
+                // we'll also ward him bonus money based on how well he performed this round
+                int moneyToAdd = (((totalValue)/(this.roundScore/this.players.size()))-1)*plr.getBonusMoneyRate();
+                // System.out.println("Player went "+(((totalValue)/(this.roundScore/this.players.size()))-1)+"% over the asked amount");
+                // System.out.println("Bonus money: "+moneyToAdd);
+                    if (moneyToAdd >= 0) {
+                    plr.setMoney(plr.getMoney() + moneyToAdd);
+                }
             }
 
-            // the bonus money to award to the player
-            int moneyToAdd = (((totalValue)/(this.roundScore/this.players.size()))-1)*plr.getBonusMoneyRate();
-            // System.out.println("Player went "+(((totalValue)/(this.roundScore/this.players.size()))-1)+"% over the asked amount");
-            // System.out.println("Bonus money: "+moneyToAdd);
+            int[] plrInterests = plr.getInterests();
+            
+            // System.out.println("Current money: "+plrMoney);
+            for (int i=0;i<plrInterests[2];i++) {
+                // System.out.println("Checking for interests");
+                if ((plrMoney - plrInterests[1]) >= 0) {
+                    // System.out.println("Interest ok at "+plrMoney);
+                    plrMoney -= plrInterests[1];
+                    plr.setMoney(plr.getMoney() + plrInterests[0]);
+                }
+                else {
+                    // System.out.println("Interest not ok at "+plrMoney);
+                    break;
+                }
+            }
+            
             // plr.setMoney((int) Math.floor(plr.getMoney() + (plr.getMoney() * moneyToAdd)));
             // ^ the above line is wrong and leads to enourmous rewards, but I kept it because I find it funny
-            if (moneyToAdd >= 0) {
-                plr.setMoney(plr.getMoney() + moneyToAdd);
-            }
+            
 
             for (Card c : plr.getDeck().getAllCards()) {
                 this.discardPile.addCard(c);

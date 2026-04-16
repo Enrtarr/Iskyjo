@@ -6,13 +6,19 @@ import java.util.ArrayList;
 
 import com.neuilleprime.jokers.*;
 
+/**
+ * Represents a player in the game.
+ * A player has a deck, jokers, consumables, upgrades, and various stats
+ * such as points, money, and interest rates.
+ */
 public class Player {
     private static final int DEFAULT_MAX_JOKERS = 5;
     private static final int DEFAULT_MAX_CONSUMABLES = 2;
     private static final String DEFAULT_NAME = "Unnamed";
     private static final int DEFAULT_POINTS = 0;
     private static final int DEFAULT_MONEY = 0;
-    private static final int DEFAULT_INTERESTS = 1;
+    private static final int DEFAULT_BONUS_MONEY = 1;
+    private static final int[] DEFAULT_INTERESTS = new int[] {1, 5, 5}; // {amount gained, per slice of X, Y time max}
 
     private Deck deck;
     private ArrayList<Joker> jokers;
@@ -24,7 +30,11 @@ public class Player {
     private int points;
     private int money;
     private int bonusMoneyRate;
+    private int[] interests;
 
+    /**
+     * Default constructor initializing player with default values.
+     */
     public Player() {
         this(
             new Deck(), 
@@ -36,10 +46,15 @@ public class Player {
             DEFAULT_NAME, 
             DEFAULT_POINTS, 
             DEFAULT_MONEY,
+            DEFAULT_BONUS_MONEY,
             DEFAULT_INTERESTS
         );
     }
 
+    /**
+     * Constructor initializing player with a given name.
+     * @param name the player's name
+     */
     public Player(String name) {
         this(
             new Deck(), 
@@ -51,14 +66,30 @@ public class Player {
             name, 
             DEFAULT_POINTS, 
             DEFAULT_MONEY,
+            DEFAULT_BONUS_MONEY,
             DEFAULT_INTERESTS
         );
     }
 
+    /**
+     * Full constructor for Player.
+     * 
+     * @param deck the player's deck
+     * @param jokers the list of jokers
+     * @param maxJokers maximum number of jokers allowed
+     * @param consumables the list of consumables
+     * @param maxConsumables maximum number of consumables allowed
+     * @param upgrades the list of upgrades
+     * @param name the player's name
+     * @param points the player's points
+     * @param money the player's money
+     * @param bonusMoneyRate bonus money multiplier
+     * @param interests interest thresholds
+     */
     public Player(Deck deck, ArrayList<Joker> jokers, int maxJokers,
                 ArrayList<Joker> consumables, int maxConsumables,
                 ArrayList<Joker> upgrades, String name, int points, 
-                int money, int interests) {
+                int money, int bonusMoneyRate, int[] interests) {
         this.deck = (deck != null) ? deck : new Deck();
         this.jokers = (jokers != null) ? jokers : new ArrayList<>();
         this.maxJokers = maxJokers;
@@ -68,7 +99,8 @@ public class Player {
         this.name = (name != null) ? name : DEFAULT_NAME;
         this.points = points;
         this.money = money;
-        this.bonusMoneyRate = interests;
+        this.bonusMoneyRate = bonusMoneyRate;
+        this.interests = interests;
     }
 
     /**
@@ -152,15 +184,15 @@ public class Player {
     }
 
     /**
-     * Returns the list of consumables.
-     * @return the consumables
+     * Returns the list of upgrades.
+     * @return the upgrades
      */
     public ArrayList<Joker> getUpgrades() {
         return this.upgrades;
     }
 
     /**
-     * Sets the list of consumables.
+     * Sets the list of upgrades.
      * @param upgrades the upgrades to set
      */
     public void setUpgrades(ArrayList<Joker> upgrades) {
@@ -216,18 +248,34 @@ public class Player {
     }
 
     /**
-     * Returns the player's interests rates.
-     * @return the rates
+     * Returns the bonus money rate.
+     * @return the bonusMoneyRate
      */
     public int getBonusMoneyRate() {
         return this.bonusMoneyRate;
     }
 
     /**
-     * Sets the player's interests rates.
-     * @param bonusMoney the interests to set (in x per % over the quota)
+     * Sets the bonus money rate.
+     * @param bonusMoney the bonus rate to set
      */
     public void setBonusMoneyRate(int bonusMoney) {
         this.bonusMoneyRate = bonusMoney;
+    }
+
+    /**
+     * Returns the interest thresholds.
+     * @return the interests array
+     */
+    public int[] getInterests() {
+        return this.interests;
+    }
+
+    /**
+     * Sets the interest thresholds.
+     * @param interests the interests to set
+     */
+    public void setInterests(int[] interests) {
+        this.interests = interests;
     }
 }
