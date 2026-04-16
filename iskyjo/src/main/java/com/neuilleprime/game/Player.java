@@ -23,7 +23,7 @@ public class Player {
     private String name;
     private int points;
     private int money;
-    private int interests;
+    private int bonusMoneyRate;
 
     public Player() {
         this(
@@ -68,7 +68,7 @@ public class Player {
         this.name = (name != null) ? name : DEFAULT_NAME;
         this.points = points;
         this.money = money;
-        this.interests = interests;
+        this.bonusMoneyRate = interests;
     }
 
     /**
@@ -219,15 +219,15 @@ public class Player {
      * Returns the player's interests rates.
      * @return the rates
      */
-    public int getInterests() {
-        return this.interests;
+    public int getBonusMoneyRate() {
+        return this.bonusMoneyRate;
     }
 
     /**
      * Sets the player's interests rates.
-     * @param interests the interests to set (in x per % over the quota)
+     * @param bonusMoney the interests to set (in x per % over the quota)
      */
-    public void setInterests(int interests) {
-        this.interests = interests;
+    public void setBonusMoneyRate(int bonusMoney) {
+        this.bonusMoneyRate = bonusMoney;
     }
 }

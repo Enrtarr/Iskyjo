@@ -311,7 +311,7 @@ public class GameController {
             }
 
             // the bonus money to award to the player
-            int moneyToAdd = (((totalValue)/(this.roundScore/this.players.size()))-1)*plr.getInterests();
+            int moneyToAdd = (((totalValue)/(this.roundScore/this.players.size()))-1)*plr.getBonusMoneyRate();
             // System.out.println("Player went "+(((totalValue)/(this.roundScore/this.players.size()))-1)+"% over the asked amount");
             // System.out.println("Bonus money: "+moneyToAdd);
             // plr.setMoney((int) Math.floor(plr.getMoney() + (plr.getMoney() * moneyToAdd)));
