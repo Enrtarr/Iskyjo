@@ -37,6 +37,8 @@ public class VZoneView extends VBox {
         this.nameSize = .1;
         this.contentSize = .3;
 
+        contentLabel.setWrapText(true);
+
         ImageView zoneBoxTexture = new ImageView(AssetLoader.CARD_TRANSPARENT);
 
         // dynamic size binding
