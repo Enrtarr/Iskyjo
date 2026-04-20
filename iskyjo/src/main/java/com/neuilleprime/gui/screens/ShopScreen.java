@@ -6,7 +6,7 @@ import com.neuilleprime.game.events.GameEventListener;
 import com.neuilleprime.game.events.RoundEndedEvent;
 import com.neuilleprime.game.events.ShopRerolledEvent;
 import com.neuilleprime.game.events.TurnStartedEvent;
-import com.neuilleprime.gui.components.VZoneView;
+import com.neuilleprime.gui.components.VTextBox;
 import com.neuilleprime.gui.utils.AssetLoader;
 import com.neuilleprime.gui.utils.GameLogic;
 import com.neuilleprime.gui.utils.ScreenManager;
@@ -87,7 +87,7 @@ public class ShopScreen {
                 Platform.runLater(() -> {
                     leftBar.getChildren().clear();
 
-                    VZoneView moneyView = new VZoneView("Money");
+                    VTextBox moneyView = new VTextBox("Money");
                     moneyView.setText(player.getMoney()+"₣");
                     moneyView.prefWidthProperty().bind(rightBar.prefWidthProperty());
                     moneyView.prefHeightProperty().bind(rightBar.prefHeightProperty());
@@ -108,7 +108,7 @@ public class ShopScreen {
 
                     leftBar.getChildren().clear();
 
-                    VZoneView moneyView = new VZoneView("Money");
+                    VTextBox moneyView = new VTextBox("Money");
                     moneyView.setText(player.getMoney()+"₣");
                     moneyView.setNameColor("#00a6ff");
                     moneyView.setContentColor("#000000");

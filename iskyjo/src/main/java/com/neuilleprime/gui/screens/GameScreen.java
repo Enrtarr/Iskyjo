@@ -13,7 +13,7 @@ import com.neuilleprime.gui.components.CardView;
 import com.neuilleprime.gui.components.DeckView;
 import com.neuilleprime.gui.components.PileTopView;
 import com.neuilleprime.gui.components.TopTextView;
-import com.neuilleprime.gui.components.VZoneView;
+import com.neuilleprime.gui.components.VTextBox;
 import com.neuilleprime.gui.utils.GameLogic;
 import com.neuilleprime.gui.utils.ScreenManager;
 
@@ -169,13 +169,13 @@ public class GameScreen {
                     }
 
                     // discard zone
-                    VZoneView discardZoneView = new VZoneView("Discard");
+                    VTextBox discardZoneView = new VTextBox("Discard");
                     discardZoneView.setNameColor("#00a6ff");
                     discardZoneView.setContentColor("#000000");
                     discardZoneView.setBackgroundColor("#a92a00");
                     discardZoneView.setBorderColor("#7c2300");
                     discardZoneView.setNameSize(.1);
-                    discardZoneView.setContentSize(.3);
+                    discardZoneView.setContentSize(.4);
                     discardZoneView.prefWidthProperty().bind(rightBar.prefWidthProperty());
                     discardZoneView.prefHeightProperty().bind(rightBar.prefHeightProperty());
 
@@ -326,7 +326,7 @@ public class GameScreen {
         }
     }
 
-    private void setupZoneInteractions(VZoneView zoneView) {
+    private void setupZoneInteractions(VTextBox zoneView) {
         zoneView.setOnDragOver(e -> {
             if (e.getGestureSource() != zoneView 
                     && e.getDragboard().hasString() 
@@ -360,7 +360,7 @@ public class GameScreen {
                 this.waitingForCardSelection = true;
 
                 // we also tell them by adding an indicator
-                zoneView.setText("Please click \non a card to \nreveal it");
+                zoneView.setText("Please click on a card to reveal it");
 
                 succes = true;
             }

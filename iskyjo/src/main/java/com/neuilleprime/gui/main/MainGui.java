@@ -1,5 +1,6 @@
 package com.neuilleprime.gui.main;
 
+import com.neuilleprime.gui.screens.DebugScreen;
 import com.neuilleprime.gui.screens.GameOverScreen;
 import com.neuilleprime.gui.screens.GameScreen;
 import com.neuilleprime.gui.screens.MenuScreen;
@@ -30,7 +31,7 @@ public class MainGui extends Application {
         // Appelé sur le JavaFX Application Thread.
         ScreenManager sm = new ScreenManager(stage);
 
-        GameScreen debug = new GameScreen(sm);
+        DebugScreen debug = new DebugScreen(sm);
         MenuScreen menu = new MenuScreen(sm);
         GameScreen game = new GameScreen(sm);
         GameOverScreen gameover = new GameOverScreen(sm);
@@ -50,7 +51,7 @@ public class MainGui extends Application {
         stage.setTitle("Iskyjo");
         stage.setWidth(1280);
         stage.setHeight(720);
-        sm.show("menu");
+        sm.show("debug");
         stage.show();
     }
 
