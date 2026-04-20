@@ -40,7 +40,7 @@ public class JokerView extends HBox {
 
         // instanciation of all the sub-elems of the class
         this.hBoxContainer = new HBox();
-        this.leftImageView = new ImageView(AssetLoader.CARD_BLANK);
+        this.leftImageView = new ImageView(AssetLoader.getAssetFromString(this.joker.getTextureName()));
         this.rightStackPane = new StackPane();
         this.rightStackPaneRatio = new ImageView(AssetLoader.CARD_TRANSPARENT);
         this.rightStackPaneVBOX = new VBox();
