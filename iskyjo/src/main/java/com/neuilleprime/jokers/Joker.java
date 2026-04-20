@@ -41,6 +41,10 @@ public abstract class Joker {
         return joker.getRarity() == rarity;
     }
 
+    public String getTextureName() {
+        return this.getClass().getSimpleName();
+    }
+
     public boolean isConsumable() {
         return this.consumable;
     }
