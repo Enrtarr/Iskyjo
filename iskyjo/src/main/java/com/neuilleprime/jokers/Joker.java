@@ -29,6 +29,36 @@ public abstract class Joker {
 
         public final int weight;
         JokerRarity(int weight) { this.weight = weight; }
+
+        public String getName() {
+            return switch (this) {
+                case COMMON    -> "Common";
+                case UNCOMMON  -> "Uncommon";
+                case RARE      -> "Rare";
+                case EPIC      -> "Epic";
+                case LEGENDARY -> "Legendary";
+            };
+        }
+
+        public String getBackgroundColor() {
+            return switch (this) {
+                case COMMON    -> "#9e9e9e"; // grey
+                case UNCOMMON  -> "#4caf50"; // green
+                case RARE      -> "#2196f3"; // blue
+                case EPIC      -> "#9c27b0"; // purple
+                case LEGENDARY -> "#ff9800"; // orange/gold
+            };
+        }
+
+        public String getOutlineColor() {
+            return switch (this) {
+                case COMMON    -> "#747474"; // grey
+                case UNCOMMON  -> "#3b893d"; // green
+                case RARE      -> "#1972bc"; // blue
+                case EPIC      -> "#711d80"; // purple
+                case LEGENDARY -> "#c97800"; // orange/gold
+            };
+        }
     }
 
     public abstract JokerCategory getCategory();
