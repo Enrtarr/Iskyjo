@@ -154,5 +154,6 @@ public class JokerView extends HBox {
 
     private void setRightPaneVisibility(boolean visible) {
         this.rightStackPane.setVisible(visible);
+        this.rightStackPane.setManaged(visible);
     }
 }
