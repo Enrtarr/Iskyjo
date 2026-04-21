@@ -20,8 +20,8 @@ public class JokerView extends HBox {
     private ImageView rightStackPaneRatio;
     private VBox rightStackPaneVBOX;
     private Label jokerName;
-    private Label jokerRarity;
     private Label jokerDescription;
+    private Label jokerRarity;
     private Label jokerPrice;
 
     private boolean isRightPaneVisible = false;
@@ -45,8 +45,8 @@ public class JokerView extends HBox {
         this.rightStackPaneRatio = new ImageView(AssetLoader.CARD_TRANSPARENT);
         this.rightStackPaneVBOX = new VBox();
         this.jokerName = new Label(this.joker.getName());
-        this.jokerRarity = new Label("rarity");
         this.jokerDescription = new Label(this.joker.getDescription());
+        this.jokerRarity = new Label(this.joker.getRarity().getName());
         this.jokerPrice = new Label(this.joker.getPrice()+"₣");
 
         // just a bit of styling
@@ -54,8 +54,8 @@ public class JokerView extends HBox {
 
         // now we put them all in the right place
         this.rightStackPaneVBOX.getChildren().addAll(
-            this.jokerName, this.jokerRarity, 
-            this.jokerDescription, this.jokerPrice
+            this.jokerName, this.jokerDescription,
+            this.jokerRarity, this.jokerPrice
         );
         this.rightStackPane.getChildren().addAll(
             this.rightStackPaneRatio, this.rightStackPaneVBOX
@@ -110,18 +110,6 @@ public class JokerView extends HBox {
             "-fx-border-width: "+borderWidth+";" +
             "-fx-border-radius: "+borderRadius+" "+borderRadius+" "+borderRadius+" "+borderRadius+";"
         );
-        double jokerRarityFontSize = newVal.doubleValue() * .1 / this.jokerName.getText().length() * 15;
-        this.jokerRarity.setStyle(
-            "-fx-font-size: " + jokerRarityFontSize + "px;" +
-            "-fx-font-family: 'VCR OSD Mono';" +
-            "-fx-text-fill: "+"#2c2121"+";" +
-            "-fx-background-color: "+"#cdc0c0"+";" +
-            "-fx-background-radius: "+borderRadius+" "+borderRadius+" "+borderRadius+" "+borderRadius+";" +
-            "-fx-padding: "+cardPadding+" "+cardPadding+" "+cardPadding+" "+cardPadding+";" +
-            "-fx-border-color: "+"#8f8787"+";" +
-            "-fx-border-width: "+borderWidth+";" +
-            "-fx-border-radius: "+borderRadius+" "+borderRadius+" "+borderRadius+" "+borderRadius+";"
-        );
         double jokerDescriptionFontSize = newVal.doubleValue() * .1 / this.jokerName.getText().length() * 15;
         this.jokerDescription.setStyle(
             "-fx-font-size: " + jokerDescriptionFontSize + "px;" +
@@ -131,6 +119,18 @@ public class JokerView extends HBox {
             "-fx-background-radius: "+borderRadius+" "+borderRadius+" "+borderRadius+" "+borderRadius+";" +
             "-fx-padding: "+cardPadding+" "+cardPadding+" "+cardPadding+" "+cardPadding+";" +
             "-fx-border-color: "+"#8f8787"+";" +
+            "-fx-border-width: "+borderWidth+";" +
+            "-fx-border-radius: "+borderRadius+" "+borderRadius+" "+borderRadius+" "+borderRadius+";"
+        );
+        double jokerRarityFontSize = newVal.doubleValue() * .1 / this.jokerName.getText().length() * 15;
+        this.jokerRarity.setStyle(
+            "-fx-font-size: " + jokerRarityFontSize + "px;" +
+            "-fx-font-family: 'VCR OSD Mono';" +
+            "-fx-text-fill: "+"#2c2121"+";" +
+            "-fx-background-color: "+this.joker.getRarity().getBackgroundColor()+";" +
+            "-fx-background-radius: "+borderRadius+" "+borderRadius+" "+borderRadius+" "+borderRadius+";" +
+            "-fx-padding: "+cardPadding+" "+cardPadding+" "+cardPadding+" "+cardPadding+";" +
+            "-fx-border-color: "+this.joker.getRarity().getOutlineColor()+";" +
             "-fx-border-width: "+borderWidth+";" +
             "-fx-border-radius: "+borderRadius+" "+borderRadius+" "+borderRadius+" "+borderRadius+";"
         );
