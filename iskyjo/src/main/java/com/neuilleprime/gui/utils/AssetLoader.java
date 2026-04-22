@@ -12,9 +12,12 @@ public class AssetLoader {
     public static final Image CARD_OVERLAY_1;
     public static final Image CARD_OVERLAY_2;
     public static final Image CARD_TRANSPARENT;
+    public static final Image NP_LOGO;
     public static final Image BUTTON_PLAY;
     public static final Image BUTTON_LEADERBOARD;
-    public static final Image NP_LOGO;
+    public static final Image BUTTON_SHOP;
+    public static final Image BUTTON_REROLL;
+    public static final Image BUTTON_NEXT_ROUND;
 
     // jokers
     public static final Image J_ADD_X_CARD;
@@ -32,9 +35,12 @@ public class AssetLoader {
         CARD_OVERLAY_1     = load("/Assets/Cards/card_overlay-1.png");
         CARD_OVERLAY_2     = load("/Assets/Cards/card_overlay-2.png");
         CARD_TRANSPARENT   = load("/Assets/Cards/card_transparent.png");
+        NP_LOGO            = load("/Assets/NP_logo.png");
         BUTTON_PLAY        = load("/Assets/Buttons/button_play.png");
         BUTTON_LEADERBOARD = load("/Assets/Buttons/button_leaderboard.png");
-        NP_LOGO            = load("/Assets/NP_logo.png");
+        BUTTON_SHOP        = load("/Assets/Buttons/button_blank.png");
+        BUTTON_REROLL      = load("/Assets/Buttons/button_blank.png");
+        BUTTON_NEXT_ROUND   = load("/Assets/Buttons/button_blank.png");
 
         ASSET_MAP.put("card_back", CARD_BACK);
         ASSET_MAP.put("card_bg", CARD_BG);
@@ -42,9 +48,12 @@ public class AssetLoader {
         ASSET_MAP.put("card_overlay_1", CARD_OVERLAY_1);
         ASSET_MAP.put("card_overlay_2", CARD_OVERLAY_2);
         ASSET_MAP.put("card_transparent", CARD_TRANSPARENT);
+        ASSET_MAP.put("np_logo", NP_LOGO);
         ASSET_MAP.put("button_play", BUTTON_PLAY);
         ASSET_MAP.put("button_leaderboard", BUTTON_LEADERBOARD);
-        ASSET_MAP.put("np_logo", NP_LOGO);
+        ASSET_MAP.put("button_shop", BUTTON_SHOP);
+        ASSET_MAP.put("button_reroll", BUTTON_REROLL);
+        ASSET_MAP.put("button_next_round", BUTTON_NEXT_ROUND);
 
         // All the jokers (here we do them 2 by 2 cause it looks cleaner to me)
         J_ADD_X_CARD = load("/Assets/Jokers/AddXCardJoker.png");

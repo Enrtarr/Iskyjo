@@ -8,6 +8,7 @@ import com.neuilleprime.gui.components.DeckView;
 import com.neuilleprime.gui.utils.AssetLoader;
 import com.neuilleprime.gui.utils.GameLogic;
 import com.neuilleprime.gui.utils.ScreenManager;
+import com.neuilleprime.gui.utils.SideBarsHelper;
 
 import javafx.application.Platform;
 import javafx.concurrent.Task;
@@ -37,30 +38,31 @@ public class ResultScreen {
     public Scene buildScene() {
         BorderPane root = new BorderPane();
 
-        Scene scene = new Scene(root, 1280, 720);
+        // Scene scene = new Scene(root, 1280, 720);
+        Scene scene = new Scene(root);
         scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm());
 
         root.getStyleClass().add("root");
 
         VBox leftBar = new VBox();
         leftBar.setAlignment(Pos.CENTER);
-        leftBar.prefWidthProperty().bind(scene.widthProperty().multiply(.1));
+        leftBar.prefWidthProperty().bind(scene.widthProperty().multiply(SideBarsHelper.leftBarWidth));
         // leftBar.prefHeightProperty().bind(scene.heightProperty().multiply(1));
 
         VBox rightBar = new VBox();
         rightBar.setAlignment(Pos.CENTER);
-        rightBar.prefWidthProperty().bind(scene.widthProperty().multiply(.1));
+        rightBar.prefWidthProperty().bind(scene.widthProperty().multiply(SideBarsHelper.rightBarWidth));
         // rightBar.prefHeightProperty().bind(scene.heightProperty().multiply(1));
 
         HBox topBar = new HBox();
         topBar.setAlignment(Pos.CENTER);
-        // topBar.prefWidthProperty().bind(scene.widthProperty().multiply(1));
-        topBar.prefHeightProperty().bind(scene.heightProperty().multiply(.1));
+        topBar.prefWidthProperty().bind(scene.widthProperty().multiply(SideBarsHelper.topBarWidth));
+        topBar.prefHeightProperty().bind(scene.heightProperty().multiply(SideBarsHelper.topBarHeight));
 
         HBox bottomBar = new HBox();
         bottomBar.setAlignment(Pos.CENTER);
-        // bottomBar.prefWidthProperty().bind(scene.widthProperty().multiply(1));
-        // bottomBar.prefHeightProperty().bind(scene.heightProperty().multiply(1));
+        bottomBar.prefWidthProperty().bind(scene.widthProperty().multiply(SideBarsHelper.bottomBarWidth));
+        bottomBar.prefHeightProperty().bind(scene.heightProperty().multiply(SideBarsHelper.bottomBarHeight));
 
         StackPane centerBar = new StackPane();
         centerBar.setAlignment(Pos.CENTER);
@@ -89,14 +91,28 @@ public class ResultScreen {
             @Override
             public void onRoundEnded(RoundEndedEvent event) {
                 Platform.runLater(() -> {
-                    System.out.println("sus");
-                    System.out.println("amogus");
+                    // System.out.println("sus");
+                    // System.out.println("amogus");
+
+                    topBar.getChildren().clear();
+
+                    Button shopButton = new Button();
+                    shopButton.setGraphic(new ImageView(AssetLoader.BUTTON_SHOP));
+                    shopButton.setStyle("-fx-background-color: transparent;");
+                    shopButton.setOnAction(e -> {
+                        sm.show("shop");
+                    });
+
+                    topBar.getChildren().add(shopButton);
+
+                    bottomBar.getChildren().clear();
+                    SideBarsHelper.loadBottomBar(bottomBar, player);
 
                     centerBar.getChildren().clear();
 
                     Deck deck = event.playerDecks.get(player);
 
-                    deck.printAll();
+                    // deck.printAll();
 
                     DeckView deckView = new DeckView(deck);
                     deckView.prefWidthProperty().bind(centerBar.widthProperty().multiply(0.4));
@@ -104,16 +120,7 @@ public class ResultScreen {
 
                     centerBar.getChildren().add(deckView);
 
-                    topBar.getChildren().clear();
-
-                    Button shopButton = new Button();
-                    shopButton.setGraphic(new ImageView(AssetLoader.BUTTON_PLAY));
-                    shopButton.setStyle("-fx-background-color: transparent;");
-                    shopButton.setOnAction(e -> {
-                        sm.show("shop");
-                    });
-
-                    topBar.getChildren().add(shopButton);
+                    
                 });
             }
 

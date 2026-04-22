@@ -13,7 +13,7 @@ public class GameLogic {
     public static GameController setupGame(int nbrPlr, int nbrCard) {
 
         ArrayList<Player> playerList = new ArrayList<>();
-
+        
         playerList.add(localPlayer);
         // here we should go to nbrPlr+1, but since we already have our local player in, we don't
         for (int i=1;i<nbrPlr;i++) {

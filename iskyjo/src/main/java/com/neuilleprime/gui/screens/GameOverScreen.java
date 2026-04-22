@@ -1,8 +1,6 @@
 package com.neuilleprime.gui.screens;
 
-import com.neuilleprime.game.actions.BeginGameAction;
 import com.neuilleprime.gui.utils.AssetLoader;
-import com.neuilleprime.gui.utils.GameLogic;
 import com.neuilleprime.gui.utils.ScreenManager;
 
 import javafx.geometry.Pos;
@@ -29,7 +27,8 @@ public class GameOverScreen {
         menuButton.setGraphic(new ImageView(AssetLoader.BUTTON_PLAY));
         menuButton.setStyle("-fx-background-color: transparent;");
         menuButton.setOnAction(e -> {
-            GameLogic.gameController.execute(new BeginGameAction());
+            // GameLogic.gameController.execute(new BeginGameAction());
+            // GameLogic.gameController = null;
             sm.show("menu");
         });
 

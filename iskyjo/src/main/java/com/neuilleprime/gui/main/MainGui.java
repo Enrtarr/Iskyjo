@@ -49,9 +49,10 @@ public class MainGui extends Application {
         Font.loadFont(getClass().getResourceAsStream("/Assets/Fonts/balatro.otf"), 14);
 
         stage.setTitle("Iskyjo");
-        stage.setWidth(1280);
-        stage.setHeight(720);
-        sm.show("debug");
+        // stage.setWidth(1280);
+        // stage.setHeight(720);
+        stage.setMaximized(true);
+        sm.show("menu");
         stage.show();
     }
 

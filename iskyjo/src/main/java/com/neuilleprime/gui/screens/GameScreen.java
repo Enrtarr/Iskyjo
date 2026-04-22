@@ -14,6 +14,7 @@ import com.neuilleprime.gui.components.DeckView;
 import com.neuilleprime.gui.components.PileTopView;
 import com.neuilleprime.gui.components.TopTextView;
 import com.neuilleprime.gui.components.VTextBox;
+import com.neuilleprime.gui.utils.SideBarsHelper;
 import com.neuilleprime.gui.utils.GameLogic;
 import com.neuilleprime.gui.utils.ScreenManager;
 
@@ -50,30 +51,31 @@ public class GameScreen {
     public Scene buildScene() {
         BorderPane root = new BorderPane();
 
-        Scene scene = new Scene(root, 1280, 720);
+        // Scene scene = new Scene(root, 1280, 720);
+        Scene scene = new Scene(root);
         scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm());
 
         root.getStyleClass().add("root");
 
         VBox leftBar = new VBox();
         leftBar.setAlignment(Pos.CENTER);
-        leftBar.prefWidthProperty().bind(scene.widthProperty().multiply(.1));
+        leftBar.prefWidthProperty().bind(scene.widthProperty().multiply(SideBarsHelper.leftBarWidth));
         // leftBar.prefHeightProperty().bind(scene.heightProperty().multiply(1));
 
         VBox rightBar = new VBox();
         rightBar.setAlignment(Pos.CENTER);
-        rightBar.prefWidthProperty().bind(scene.widthProperty().multiply(.1));
+        rightBar.prefWidthProperty().bind(scene.widthProperty().multiply(SideBarsHelper.rightBarWidth));
         // rightBar.prefHeightProperty().bind(scene.heightProperty().multiply(1));
 
         HBox topBar = new HBox();
         topBar.setAlignment(Pos.CENTER);
-        // topBar.prefWidthProperty().bind(scene.widthProperty().multiply(1));
-        topBar.prefHeightProperty().bind(scene.heightProperty().multiply(.1));
+        topBar.prefWidthProperty().bind(scene.widthProperty().multiply(SideBarsHelper.topBarWidth));
+        topBar.prefHeightProperty().bind(scene.heightProperty().multiply(SideBarsHelper.topBarHeight));
 
         HBox bottomBar = new HBox();
         bottomBar.setAlignment(Pos.CENTER);
-        // bottomBar.prefWidthProperty().bind(scene.widthProperty().multiply(1));
-        // bottomBar.prefHeightProperty().bind(scene.heightProperty().multiply(1));
+        bottomBar.prefWidthProperty().bind(scene.widthProperty().multiply(SideBarsHelper.bottomBarWidth));
+        bottomBar.prefHeightProperty().bind(scene.heightProperty().multiply(SideBarsHelper.bottomBarHeight));
 
         StackPane centerBar = new StackPane();
         centerBar.setAlignment(Pos.CENTER);
@@ -100,17 +102,19 @@ public class GameScreen {
             @Override
             public void onTurnStarted(TurnStartedEvent event) {
                 Platform.runLater(() -> {
-                    System.out.println("amogonus");
+                    // System.out.println("amogonus");
                     boolean isLocalPlrTurn = event.currentPlayer == GameLogic.localPlayer;
 
+                    // clear all bar to prevent duplicates
                     topBar.getChildren().clear();
+                    bottomBar.getChildren().clear();
                     leftBar.getChildren().clear();
                     rightBar.getChildren().clear();
                     centerBar.getChildren().clear();
 
                     // for testing purposes, should be removed in the future
-                    System.out.println("Current deck:");
-                    event.currentPlayer.getDeck().printAll();
+                    // System.out.println("Current deck:");
+                    // event.currentPlayer.getDeck().printAll();
 
                     // top bar, displaying info
                     Label playerTurnLabel = new TopTextView(event.currentPlayer.getName()+"'s turn", .3);
@@ -127,6 +131,9 @@ public class GameScreen {
                     topBar.spacingProperty().bind(topBar.widthProperty().multiply(.05));
                     
                     topBar.getChildren().addAll(playerTurnLabel, roundLabel, roundScoreLabel);
+
+                    // joker and consus display (of the current player, regardless who it is)
+                    SideBarsHelper.loadBottomBar(bottomBar, event.currentPlayer);
 
                     // both piles, with regards to single/multi-player
                     boolean isDrawPileEmpty = event.drawPileTop == null;
@@ -248,7 +255,7 @@ public class GameScreen {
 
         topCardView.setOnDragDone(e -> {
             if (e.getTransferMode() == transferMode) {
-                System.out.println("pipi");
+                // System.out.println("amogsus");
                 // e.get
                 
             }

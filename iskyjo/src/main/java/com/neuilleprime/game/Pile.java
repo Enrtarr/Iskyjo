@@ -46,7 +46,7 @@ public class Pile {
             addCards(1, 12);
         }
 
-        System.out.println(this.size.get());
+        // System.out.println(this.size.get());
     }
 
     public Card getTop() {

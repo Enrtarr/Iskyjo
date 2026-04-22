@@ -10,7 +10,9 @@ import com.neuilleprime.jokers.*;
 import com.neuilleprime.jokers.Joker.JokerCategory;
 import com.neuilleprime.game.actions.Action;
 import com.neuilleprime.game.events.GameEventListener;
+import com.neuilleprime.game.events.JokerSoldEvent;
 import com.neuilleprime.game.events.RoundEndedEvent;
+import com.neuilleprime.game.events.ShopRerolledEvent;
 import com.neuilleprime.game.events.TurnStartedEvent;
 
 public class GameController {
@@ -46,6 +48,7 @@ public class GameController {
     private Card lastDrawnCard;
     // 1=next turn, 2=next round (shop), 0=loss
     private int gameState;
+    private Shop shop = new Shop();
 
     public GameController(ArrayList<Player> players, int nbrOfCards) {
         this.players = players;
@@ -142,6 +145,8 @@ public class GameController {
         return this.lastDrawnCard;
     }
 
+    // TURN LOGIC
+
     public void flipCard(Player player, int[] cardCoords) {
         if (player != this.getCurrentPlayer()) {
             return;
@@ -211,6 +216,27 @@ public class GameController {
         }
     }
 
+    // SHOP BINDING AND LOGIC
+
+    public void sellJoker(Player player, Joker joker) {
+        System.out.println("tel aviv impressed");
+        this.shop.sellJoker(player, joker);
+        notifyPlayer(player, l -> l.onJokerSold(new JokerSoldEvent(player)));
+    }
+
+    public void buyJoker(Player player, Joker joker) {
+        ArrayList<Joker> jokers = this.shop.buyJoker(player, joker);
+        // for (Joker j : jokers) {
+        //     System.out.println(j.getName());
+        // }
+        notifyPlayer(player, l -> l.onShopRerolledEvent(new ShopRerolledEvent(jokers)));
+    }
+
+    public void rerollShop(Player player) {
+        ArrayList<Joker> jokers = this.shop.rerollShop(player);
+        notifyPlayer(player, l -> l.onShopRerolledEvent(new ShopRerolledEvent(jokers)));
+    }
+
     public void readyUp() {
         this.nbrPlayersReady += 1;
         System.out.println("Number of players ready: "+this.nbrPlayersReady+"/"+this.players.size());
@@ -219,6 +245,8 @@ public class GameController {
             beginRound(false);
         }
     }
+
+    // NEW ROUND LOGIC
 
     private void beginRound(boolean setup) {
         this.isRoundEnding = false;
@@ -251,6 +279,10 @@ public class GameController {
             this.moneyPerRound = 3;
             this.lastDrawnCard = null;
             this.gameState = 1;
+
+            for (Player plr : this.players) {
+                plr.resetPlayer();
+            }
         }
 
         System.out.println("\nPreparing new round...");
@@ -337,8 +369,10 @@ public class GameController {
             }
             
             // plr.setMoney((int) Math.floor(plr.getMoney() + (plr.getMoney() * moneyToAdd)));
-            // ^ the above line is wrong and leads to enourmous rewards, but I kept it because I find it funny
+            // ^ the above line is wrong and leads to enormous rewards, but I kept it because I find it funny
             
+            ArrayList<Joker> jokers = this.shop.rerollShop(plr, true);
+            notifyPlayer(plr, l -> l.onShopRerolledEvent(new ShopRerolledEvent(jokers)));
 
             for (Card c : plr.getDeck().getAllCards()) {
                 this.discardPile.addCard(c);
@@ -386,7 +420,7 @@ public class GameController {
             // deck.printAll();
         }
 
-        System.out.println(this.drawPile.size());
+        System.out.println("Draw pile size: "+this.drawPile.size());
 
         // set up the new score to beat
         this.roundScore = scorePerRounds[this.round - 1];

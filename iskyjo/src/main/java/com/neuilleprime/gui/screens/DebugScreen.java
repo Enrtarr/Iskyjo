@@ -12,7 +12,9 @@ import com.neuilleprime.gui.components.JokerView;
 import com.neuilleprime.gui.components.VTextBox;
 // import com.neuilleprime.gui.utils.AssetLoader;
 import com.neuilleprime.gui.utils.ScreenManager;
+import com.neuilleprime.gui.utils.SideBarsHelper;
 import com.neuilleprime.jokers.AddXCardJoker;
+import com.neuilleprime.jokers.AddXDeckJoker;
 
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -34,30 +36,31 @@ public class DebugScreen {
     public Scene buildScene() {
         BorderPane root = new BorderPane();
 
-        Scene scene = new Scene(root, 1280, 720);
+        // Scene scene = new Scene(root, 1280, 720);
+        Scene scene = new Scene(root);
         scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm());
 
         root.getStyleClass().add("root");
 
         VBox leftBar = new VBox();
         leftBar.setAlignment(Pos.CENTER);
-        leftBar.prefWidthProperty().bind(scene.widthProperty().multiply(.1));
+        leftBar.prefWidthProperty().bind(scene.widthProperty().multiply(SideBarsHelper.leftBarWidth));
         // leftBar.prefHeightProperty().bind(scene.heightProperty().multiply(1));
 
         VBox rightBar = new VBox();
         rightBar.setAlignment(Pos.CENTER);
-        rightBar.prefWidthProperty().bind(scene.widthProperty().multiply(.1));
+        rightBar.prefWidthProperty().bind(scene.widthProperty().multiply(SideBarsHelper.rightBarWidth));
         // rightBar.prefHeightProperty().bind(scene.heightProperty().multiply(1));
 
         HBox topBar = new HBox();
         topBar.setAlignment(Pos.CENTER);
-        topBar.prefWidthProperty().bind(scene.widthProperty().multiply(1));
-        topBar.prefHeightProperty().bind(scene.heightProperty().multiply(.1));
+        topBar.prefWidthProperty().bind(scene.widthProperty().multiply(SideBarsHelper.topBarWidth));
+        topBar.prefHeightProperty().bind(scene.heightProperty().multiply(SideBarsHelper.topBarHeight));
 
         HBox bottomBar = new HBox();
         bottomBar.setAlignment(Pos.CENTER);
-        bottomBar.prefWidthProperty().bind(scene.widthProperty().multiply(1));
-        bottomBar.prefHeightProperty().bind(scene.heightProperty().multiply(.2));
+        bottomBar.prefWidthProperty().bind(scene.widthProperty().multiply(SideBarsHelper.bottomBarWidth));
+        bottomBar.prefHeightProperty().bind(scene.heightProperty().multiply(SideBarsHelper.bottomBarHeight));
 
         StackPane centerBar = new StackPane();
         centerBar.setAlignment(Pos.CENTER);
@@ -133,17 +136,38 @@ public class DebugScreen {
         moneyView.setContentSize(.1);
         moneyView.prefWidthProperty().bind(leftBar.prefWidthProperty());
         moneyView.prefHeightProperty().bind(leftBar.prefHeightProperty());
+        moneyView.setOnMouseClicked(e -> {
+            sm.show("menu");
+        });
 
         leftBar.getChildren().add(moneyView);
 
         bottomBar.getChildren().clear();
+        HBox jokerBar = new HBox();
+        jokerBar.setAlignment(Pos.CENTER);
+        jokerBar.prefWidthProperty().bind(bottomBar.widthProperty().multiply(.7));
+        jokerBar.prefHeightProperty().bind(bottomBar.heightProperty().multiply(1));
+        HBox consuBar = new HBox();
+        consuBar.setAlignment(Pos.CENTER);
+        consuBar.prefWidthProperty().bind(bottomBar.widthProperty().multiply(.3));
+        consuBar.prefHeightProperty().bind(bottomBar.heightProperty().multiply(1));
+        bottomBar.getChildren().addAll(jokerBar, consuBar);
 
         AddXCardJoker testJoker = new AddXCardJoker(3, false);
         JokerView testJokerView = new JokerView(testJoker);
-        testJokerView.prefWidthProperty().bind(bottomBar.prefWidthProperty());
-        testJokerView.prefHeightProperty().bind(bottomBar.prefHeightProperty());
+        testJokerView.prefWidthProperty().bind(jokerBar.prefWidthProperty());
+        testJokerView.prefHeightProperty().bind(jokerBar.prefHeightProperty());
 
-        bottomBar.getChildren().add(testJokerView);
+        System.out.println(testJoker.getTextureName());
+
+        jokerBar.getChildren().add(testJokerView);
+
+        AddXDeckJoker testJoker2 = new AddXDeckJoker(3, false);
+        JokerView testJokerView2 = new JokerView(testJoker2);
+        testJokerView2.prefWidthProperty().bind(jokerBar.prefWidthProperty());
+        testJokerView2.prefHeightProperty().bind(jokerBar.prefHeightProperty());
+
+        jokerBar.getChildren().add(testJokerView2);
 
         // root.getChildren().addAll(logo, playBtn, testCardView, testDeckView);
 

@@ -14,6 +14,8 @@ import com.neuilleprime.jokers.*;
 public class Player {
     private static final int DEFAULT_MAX_JOKERS = 5;
     private static final int DEFAULT_MAX_CONSUMABLES = 2;
+    private static final int DEFAULT_SHOP_REROLL_AMOUNT = 3;
+    private static final int DEFAULT_SHOP_REROLL_BASE_PRICE = 2;
     private static final String DEFAULT_NAME = "Unnamed";
     private static final int DEFAULT_POINTS = 0;
     private static final int DEFAULT_MONEY = 0;
@@ -26,6 +28,9 @@ public class Player {
     private ArrayList<Joker> consumables;
     private int maxConsumables;
     private ArrayList<Joker> upgrades;
+    private int shopRerollAmount;
+    private int shopRerollBasePrice;
+    private int shopRerollPrice;
     private String name;
     private int points;
     private int money;
@@ -43,6 +48,8 @@ public class Player {
             null, 
             DEFAULT_MAX_CONSUMABLES, 
             null,
+            DEFAULT_SHOP_REROLL_AMOUNT,
+            DEFAULT_SHOP_REROLL_BASE_PRICE,
             DEFAULT_NAME, 
             DEFAULT_POINTS, 
             DEFAULT_MONEY,
@@ -63,6 +70,8 @@ public class Player {
             null, 
             DEFAULT_MAX_CONSUMABLES, 
             null,
+            DEFAULT_SHOP_REROLL_AMOUNT,
+            DEFAULT_SHOP_REROLL_BASE_PRICE,
             name, 
             DEFAULT_POINTS, 
             DEFAULT_MONEY,
@@ -88,7 +97,8 @@ public class Player {
      */
     public Player(Deck deck, ArrayList<Joker> jokers, int maxJokers,
                 ArrayList<Joker> consumables, int maxConsumables,
-                ArrayList<Joker> upgrades, String name, int points, 
+                ArrayList<Joker> upgrades, int shopRerollAmount,
+                int shopRerollBasePrice, String name, int points, 
                 int money, int bonusMoneyRate, int[] interests) {
         this.deck = (deck != null) ? deck : new Deck();
         this.jokers = (jokers != null) ? jokers : new ArrayList<>();
@@ -96,11 +106,31 @@ public class Player {
         this.consumables = (consumables != null) ? consumables : new ArrayList<>();
         this.maxConsumables = maxConsumables;
         this.upgrades = (upgrades != null) ? upgrades : new ArrayList<>();
+        this.shopRerollAmount = shopRerollAmount;
+        this.shopRerollBasePrice = shopRerollBasePrice;
+        this.shopRerollPrice = shopRerollBasePrice;
         this.name = (name != null) ? name : DEFAULT_NAME;
         this.points = points;
         this.money = money;
         this.bonusMoneyRate = bonusMoneyRate;
         this.interests = interests;
+    }
+
+    public void resetPlayer() {
+        this.deck = new Deck();
+        this.jokers = new ArrayList<>();
+        this.maxJokers = DEFAULT_MAX_JOKERS;
+        this.consumables = new ArrayList<>();
+        this.maxConsumables = DEFAULT_MAX_CONSUMABLES;
+        this.upgrades = new ArrayList<>();
+        this.shopRerollAmount = DEFAULT_SHOP_REROLL_AMOUNT;
+        this.shopRerollBasePrice = DEFAULT_SHOP_REROLL_BASE_PRICE;
+        this.shopRerollPrice = shopRerollBasePrice;
+        this.name = (name != null) ? name : DEFAULT_NAME;
+        this.points = DEFAULT_POINTS;
+        this.money = DEFAULT_MONEY;
+        this.bonusMoneyRate = DEFAULT_BONUS_MONEY;
+        this.interests = DEFAULT_INTERESTS;
     }
 
     /**
@@ -197,6 +227,54 @@ public class Player {
      */
     public void setUpgrades(ArrayList<Joker> upgrades) {
         this.upgrades = (upgrades != null) ? upgrades : new ArrayList<>();
+    }
+
+    /**
+     * Returns the player's shop reroll amount (amount of jokers returned per reroll).
+     * @return the amount
+     */
+    public int getShopRerollAmount() {
+        return this.shopRerollAmount;
+    }
+
+    /**
+     * Sets the player's amount of jokers return per reroll.
+     * @param amount the amount to set
+     */
+    public void setShopRerollAmount(int amount) {
+        this.shopRerollAmount = amount;
+    }
+
+    /**
+     * Returns the player's base shop reroll price.
+     * @return the amount
+     */
+    public int getShopRerollBasePrice() {
+        return this.shopRerollBasePrice;
+    }
+
+    /**
+     * Sets the player's base reroll price.
+     * @param price the price to set
+     */
+    public void setShopRerollBasePrice(int price) {
+        this.shopRerollBasePrice = price;
+    }
+
+    /**
+     * Returns the player's shop reroll price.
+     * @return the amount
+     */
+    public int getShopRerollPrice() {
+        return this.shopRerollPrice;
+    }
+
+    /**
+     * Sets the player's reroll price.
+     * @param price the price to set
+     */
+    public void setShopRerollPrice(int price) {
+        this.shopRerollPrice = price;
     }
 
     /**

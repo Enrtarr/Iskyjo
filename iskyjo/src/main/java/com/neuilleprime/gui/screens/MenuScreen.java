@@ -41,6 +41,7 @@ public class MenuScreen {
 
         Scene scene = new Scene(root, 1280, 720);
         scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm());
+
         return scene;
     }
 }

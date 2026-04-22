@@ -9,8 +9,8 @@ public class ComboLeftAllJoker extends Joker {
     public ComboLeftAllJoker(int valueToAdd) {
         this.valueToAdd = valueToAdd;
         this.name = "Combo left all joker";
-        this.description = "Adds"+valueToAdd+" to the left (amount) part of combos";
-        this.price = 0;
+        this.description = "Adds "+valueToAdd+" to the left (amount) part of all combos";
+        this.price = 3;
     }
 
     public static final JokerCategory CATEGORY = JokerCategory.DECK;

@@ -10,8 +10,8 @@ public class AddXDeckJoker extends Joker {
         this.consumable = isConsu;
         this.value = x;
         this.name = "Add x deck joker";
-        this.description = "Adds "+this.value+" to all cards";
-        this.price = 0;
+        this.description = "Adds "+this.value+" to all cards in the deck";
+        this.price = 2;
     }
 
     public static final JokerCategory CATEGORY = JokerCategory.DECK;

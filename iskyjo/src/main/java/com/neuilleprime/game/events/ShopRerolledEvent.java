@@ -6,11 +6,9 @@ import com.neuilleprime.jokers.Joker;
 public class ShopRerolledEvent {
 
     public final ArrayList<Joker> jokers;
-    public final int newRerollPrice;
 
-    public ShopRerolledEvent(ArrayList<Joker> jokers, int newRerollPrice) {
+    public ShopRerolledEvent(ArrayList<Joker> jokers) {
         this.jokers = jokers;
-        this.newRerollPrice = newRerollPrice;
     }
 
 }

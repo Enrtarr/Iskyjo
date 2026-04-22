@@ -50,7 +50,9 @@ public class JokerView extends HBox {
         this.jokerPrice = new Label(this.joker.getPrice()+"₣");
 
         // just a bit of styling
+        this.hBoxContainer.setAlignment(Pos.CENTER);
         this.rightStackPaneVBOX.setAlignment(Pos.CENTER_LEFT);
+        jokerDescription.setWrapText(true);
 
         // now we put them all in the right place
         this.rightStackPaneVBOX.getChildren().addAll(
@@ -85,17 +87,24 @@ public class JokerView extends HBox {
     }
 
     private void updateSize(Number oldVal, Number newVal) {
+        if (newVal == null || newVal.doubleValue() <= 0) {
+            return;
+        }
 
         // this.leftImageView.fitWidthProperty().set(this.prefWidthProperty().doubleValue());
         // this.leftImageView.fitHeightProperty().set(this.prefHeightProperty().doubleValue());
         
-        boolean wasHidden = this.isRightPaneVisible;
+        boolean wasHidden = !this.isRightPaneVisible;
         if (wasHidden) {
             this.isRightPaneVisible = true;
+            setRightPaneVisibility(this.isRightPaneVisible);
         }
         // if (!this.isRightPaneVisible) {return;}
 
         double jokerNameFontSize = newVal.doubleValue() * .1 / this.jokerName.getText().length() * 15;
+        double jokerDescriptionFontSize = newVal.doubleValue() * .075 / this.jokerName.getText().length() * 15;
+        double jokerRarityFontSize = newVal.doubleValue() * .1 / this.jokerName.getText().length() * 15;
+        double jokerPriceFontSize = newVal.doubleValue() * .1 / this.jokerName.getText().length() * 15;
         double cardPadding = newVal.doubleValue() * .05;
         double borderRadius = newVal.doubleValue() * .05;
         double borderWidth = newVal.doubleValue() * .01;
@@ -110,7 +119,6 @@ public class JokerView extends HBox {
             "-fx-border-width: "+borderWidth+";" +
             "-fx-border-radius: "+borderRadius+" "+borderRadius+" "+borderRadius+" "+borderRadius+";"
         );
-        double jokerDescriptionFontSize = newVal.doubleValue() * .1 / this.jokerName.getText().length() * 15;
         this.jokerDescription.setStyle(
             "-fx-font-size: " + jokerDescriptionFontSize + "px;" +
             "-fx-font-family: 'VCR OSD Mono';" +
@@ -122,7 +130,6 @@ public class JokerView extends HBox {
             "-fx-border-width: "+borderWidth+";" +
             "-fx-border-radius: "+borderRadius+" "+borderRadius+" "+borderRadius+" "+borderRadius+";"
         );
-        double jokerRarityFontSize = newVal.doubleValue() * .1 / this.jokerName.getText().length() * 15;
         this.jokerRarity.setStyle(
             "-fx-font-size: " + jokerRarityFontSize + "px;" +
             "-fx-font-family: 'VCR OSD Mono';" +
@@ -134,7 +141,6 @@ public class JokerView extends HBox {
             "-fx-border-width: "+borderWidth+";" +
             "-fx-border-radius: "+borderRadius+" "+borderRadius+" "+borderRadius+" "+borderRadius+";"
         );
-        double jokerPriceFontSize = newVal.doubleValue() * .1 / this.jokerName.getText().length() * 15;
         this.jokerPrice.setStyle(
             "-fx-font-size: " + jokerPriceFontSize + "px;" +
             "-fx-font-family: 'VCR OSD Mono';" +
@@ -149,11 +155,20 @@ public class JokerView extends HBox {
 
         if (wasHidden) {
             this.isRightPaneVisible = false;
+            setRightPaneVisibility(this.isRightPaneVisible);
         }
     }
 
     private void setRightPaneVisibility(boolean visible) {
         this.rightStackPane.setVisible(visible);
         this.rightStackPane.setManaged(visible);
+    }
+
+    public Joker getJokerElem() {
+        return this.joker;
+    }
+
+    public ImageView getJokerImageView() {
+        return this.leftImageView;
     }
 }
