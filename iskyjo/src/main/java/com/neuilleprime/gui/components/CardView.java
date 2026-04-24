@@ -3,6 +3,8 @@ package com.neuilleprime.gui.components;
 import com.neuilleprime.game.Card;
 import com.neuilleprime.gui.utils.AssetLoader;
 
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.scene.Cursor;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
@@ -12,6 +14,7 @@ import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
+import javafx.util.Duration;
 
 public class CardView extends StackPane {
 
@@ -124,26 +127,29 @@ public class CardView extends StackPane {
     }
 
     private void updateTint(int value) {
-        Color color = null;
+        String color = null;
 
         if (value < 0) {
-            color = Color.RED;
+            color = "#ff0000";
         } else if (value == 0) {
-            color = Color.BLACK;
+            color = "#000000";
         } else if (0 < value && value < 5) {
-            color = Color.BLUE;
+            color = "#0080ff";
         } else if (4 < value && value < 8) {
-            color = Color.GREEN;
-        } else if (7 < value) {
-            color = Color.PURPLE;
+            color = "#09ff00";
+        } else if (7 < value && value < 11) {
+            color = "#e100ff";
+        } else if (10 < value) {
+            color = "#ffdd00";
         }
 
-        Image newImage = this.getTintedOverlay(this.cardFrontOverlay.getImage(), color);
+        double[] colorAsDouble = hexToDoubleArray(color);
+        Image newImage = this.getTintedOverlay(this.cardFrontOverlay.getImage(), colorAsDouble);
         this.cardFrontOverlay.setImage(newImage);
-        this.valueLabel.setTextFill(color);
+        this.valueLabel.setTextFill(new Color(colorAsDouble[0], colorAsDouble[1], colorAsDouble[2], 1));
     }
 
-    Image getTintedOverlay(Image image, Color tint) {
+    Image getTintedOverlay(Image image, double[] tint) {
 
         int width = (int) Math.round(image.getWidth());
         int height = (int) Math.round(image.getHeight());
@@ -162,12 +168,32 @@ public class CardView extends StackPane {
                     pw.setColor(x, y, Color.TRANSPARENT);
                     continue;
                 }
-                Color out = new Color(tint.getRed(), tint.getGreen(), tint.getBlue(), alpha);
+                Color out = new Color(tint[0], tint[1], tint[2], alpha);
                 pw.setColor(x, y, out);
             }
         }
 
         return tinted;
+    }
+
+    public static double[] hexToDoubleArray(String hexString) {
+        hexString = hexString.replaceAll("#", "");
+        
+        if (hexString.length() != 6) {
+            throw new IllegalArgumentException("Hex string must have exactly 6 characters for #RRGGBB format.");
+        }
+
+        double[] result = new double[3];
+
+        for (int i = 0; i < 3; i++) {
+            String hexPair = hexString.substring(i * 2, i * 2 + 2);
+            
+            int intValue = Integer.parseInt(hexPair, 16);
+            
+            result[i] = (double) intValue / 0xFF;
+        }
+
+        return result;
     }
 
     public Card getCardElem() {
