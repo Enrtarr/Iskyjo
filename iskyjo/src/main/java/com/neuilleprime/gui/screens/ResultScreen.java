@@ -1,10 +1,14 @@
 package com.neuilleprime.gui.screens;
 
+import java.util.ArrayList;
+
 import com.neuilleprime.game.Deck;
 import com.neuilleprime.game.Player;
 import com.neuilleprime.game.events.GameEventListener;
 import com.neuilleprime.game.events.RoundEndedEvent;
 import com.neuilleprime.gui.components.DeckView;
+import com.neuilleprime.gui.components.JokerView;
+import com.neuilleprime.gui.components.ScoreView;
 import com.neuilleprime.gui.utils.AssetLoader;
 import com.neuilleprime.gui.utils.GameLogic;
 import com.neuilleprime.gui.utils.ScreenManager;
@@ -51,7 +55,7 @@ public class ResultScreen {
 
         VBox rightBar = new VBox();
         rightBar.setAlignment(Pos.CENTER);
-        rightBar.prefWidthProperty().bind(scene.widthProperty().multiply(SideBarsHelper.rightBarWidth));
+        rightBar.prefWidthProperty().bind(scene.widthProperty().multiply(.15));
         // rightBar.prefHeightProperty().bind(scene.heightProperty().multiply(1));
 
         HBox topBar = new HBox();
@@ -106,21 +110,74 @@ public class ResultScreen {
                     topBar.getChildren().add(shopButton);
 
                     bottomBar.getChildren().clear();
-                    SideBarsHelper.loadBottomBar(bottomBar, player);
+                    ArrayList<JokerView> bottomBarJokers = SideBarsHelper.loadBottomBar(bottomBar, player);
+
+                    leftBar.getChildren().clear();
+                    SideBarsHelper.loadMoneyView(leftBar, event.playerMoneys.get(player));
+
+                    // new Thread(() -> {
+                    //     try {
+
+                    //         int playerMoney = event.playerMoneys.get(player);
+
+                    //         Thread.sleep(2500);
+
+                    //         int[] plrInterests = player.getInterests();
+
+                    //         plr.setMoney(plr.getMoney() + this.moneyPerRound);
+                    //         // we'll also ward him bonus money based on how well he performed this round
+                    //         int moneyToAdd = (((totalValue)/(this.roundScore/this.players.size()))-1)*plr.getBonusMoneyRate();
+                    //         // System.out.println("Player went "+(((totalValue)/(this.roundScore/this.players.size()))-1)+"% over the asked amount");
+                    //         // System.out.println("Bonus money: "+moneyToAdd);
+                    //         if (moneyToAdd >= 0) {
+                    //         plr.setMoney(plr.getMoney() + moneyToAdd);
+                    //         }
+            
+                    //         // System.out.println("Current money: "+plrMoney);
+                    //         for (int i=0;i<plrInterests[2];i++) {
+                    //             // System.out.println("Checking for interests");
+                    //             if ((playerMoney[0] - plrInterests[1]) >= 0) {
+                    //                 // System.out.println("Interest ok at "+plrMoney);
+                    //                 playerMoney[0] -= plrInterests[1];
+                    //                 player.setMoney(player.getMoney() + plrInterests[0]);
+                    //             }
+                    //             else {
+                    //                 // System.out.println("Interest not ok at "+plrMoney);
+                    //                 break;
+                    //             }
+                    //         }
+
+                    //         Platform.runLater(() -> {
+                    //             leftBar.getChildren().clear();
+                    //             SideBarsHelper.loadMoneyView(leftBar, 67);
+                    //         });
+
+                    //     } catch (InterruptedException e) {
+                    //         e.printStackTrace();
+                    //     }
+                    // }).start();
 
                     centerBar.getChildren().clear();
 
                     Deck deck = event.playerDecks.get(player);
 
-                    // deck.printAll();
-
                     DeckView deckView = new DeckView(deck);
                     deckView.prefWidthProperty().bind(centerBar.widthProperty().multiply(0.4));
                     deckView.prefHeightProperty().bind(centerBar.heightProperty().multiply(0.6));
 
+                    rightBar.getChildren().clear();
+                    ScoreView scoreView = new ScoreView(deckView, bottomBarJokers, player.getUpgrades());
+                    scoreView.prefWidthProperty().bind(leftBar.prefWidthProperty());
+                    scoreView.prefHeightProperty().bind(leftBar.prefHeightProperty());
+                    
+                    rightBar.getChildren().add(scoreView);
                     centerBar.getChildren().add(deckView);
 
-                    
+                    // for some reason we have to start it this way, or the 1st anims won't show up
+                    Platform.runLater(() -> {
+                        scoreView.clear();
+                        scoreView.startAnims();
+                    });
                 });
             }
 

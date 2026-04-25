@@ -1,5 +1,7 @@
 package com.neuilleprime.gui.utils;
 
+import java.util.ArrayList;
+
 import com.neuilleprime.game.Player;
 import com.neuilleprime.gui.components.JokerView;
 import com.neuilleprime.gui.components.VTextBox;
@@ -17,7 +19,7 @@ public class SideBarsHelper {
     public static final double leftBarWidth = .1;
     public static final double rightBarWidth = .1;
 
-    public static void loadBottomBar(HBox bottomBar, Player player) {
+    public static ArrayList<JokerView> loadBottomBar(HBox bottomBar, Player player) {
         HBox jokerBar = new HBox();
         jokerBar.setAlignment(Pos.CENTER);
         jokerBar.prefWidthProperty().bind(bottomBar.prefWidthProperty().multiply(.7));
@@ -29,11 +31,14 @@ public class SideBarsHelper {
         consuBar.prefHeightProperty().bind(bottomBar.heightProperty().multiply(1));
         bottomBar.getChildren().add(consuBar);
 
+        ArrayList<JokerView> jokerViews = new ArrayList<>();
+
         for (Joker joker : player.getJokers()) {
             JokerView jokerView = new JokerView(joker);
             jokerView.prefWidthProperty().bind(jokerBar.prefWidthProperty());
             jokerView.prefHeightProperty().bind(jokerBar.prefHeightProperty());
             jokerBar.getChildren().add(jokerView);
+            jokerViews.add(jokerView);
         }
         for (Joker consu : player.getConsumables()) {
             JokerView jokerView = new JokerView(consu);
@@ -41,6 +46,8 @@ public class SideBarsHelper {
             jokerView.prefHeightProperty().bind(jokerBar.prefHeightProperty());
             jokerBar.getChildren().add(jokerView);
         }
+
+        return jokerViews;
     }
 
     public static void loadMoneyView(VBox leftBar, int amount) {

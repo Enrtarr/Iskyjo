@@ -8,6 +8,7 @@ import com.neuilleprime.game.Player;
 import com.neuilleprime.gui.components.DeckView;
 import com.neuilleprime.gui.components.JokerView;
 import com.neuilleprime.gui.components.ScoreView;
+import com.neuilleprime.gui.utils.AssetLoader;
 
 // import java.util.ArrayList;
 
@@ -22,13 +23,18 @@ import com.neuilleprime.gui.components.ScoreView;
 // import com.neuilleprime.gui.utils.AssetLoader;
 import com.neuilleprime.gui.utils.ScreenManager;
 import com.neuilleprime.gui.utils.SideBarsHelper;
+import com.neuilleprime.jokers.AddXDeckJoker;
 // import com.neuilleprime.jokers.AddXCardJoker;
 // import com.neuilleprime.jokers.AddXDeckJoker;
 import com.neuilleprime.jokers.ComboLeftAllJoker;
+import com.neuilleprime.jokers.ComboRightJoker;
 import com.neuilleprime.jokers.Joker;
 
+import javafx.animation.Timeline;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.image.ImageView;
 // import javafx.scene.control.Button;
 // import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
@@ -60,7 +66,7 @@ public class DebugScreen {
 
         VBox rightBar = new VBox();
         rightBar.setAlignment(Pos.CENTER);
-        rightBar.prefWidthProperty().bind(scene.widthProperty().multiply(SideBarsHelper.rightBarWidth));
+        rightBar.prefWidthProperty().bind(scene.widthProperty().multiply(.15));
         // rightBar.prefHeightProperty().bind(scene.heightProperty().multiply(1));
 
         HBox topBar = new HBox();
@@ -185,6 +191,8 @@ public class DebugScreen {
 
         ArrayList<Joker> testJokers = new ArrayList<>();
         testJokers.add(new ComboLeftAllJoker(2));
+        testJokers.add(new ComboRightJoker(2, 7));
+        testJokers.add(new AddXDeckJoker(2, false));
 
         Player testPlayer = new Player(
             testDeck, 
@@ -221,8 +229,16 @@ public class DebugScreen {
 
         centerBar.getChildren().add(testDeckView);
 
-        testScoreView.addCombos();
-
+        topBar.getChildren().clear();
+        Button playBtn = new Button();
+        playBtn.setGraphic(new ImageView(AssetLoader.BUTTON_PLAY));
+        playBtn.setStyle("-fx-background-color: transparent;");
+        playBtn.setOnAction(e -> {
+            testScoreView.clear();
+            testScoreView.startAnims();
+        });
+        topBar.getChildren().add(playBtn);
+        
         // root.getChildren().addAll(logo, playBtn, testCardView, testDeckView);
 
         return scene;

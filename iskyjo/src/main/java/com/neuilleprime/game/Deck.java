@@ -491,6 +491,203 @@ public class Deck {
     }
 
     /**
+     * Builds a single combo entry: entry[0] = {streak_length, card_value},
+     * entry[1..n] = {row, col} for each card in the streak.
+     */
+    private int[][] buildEntry(int length, int value, ArrayList<int[]> coords) {
+        int[][] entry = new int[coords.size() + 1][];
+        entry[0] = new int[]{length, value};
+        for (int i = 0; i < coords.size(); i++) {
+            entry[i + 1] = coords.get(i);
+        }
+        return entry;
+    }
+
+    /**
+     * Scans all rows for consecutive identical card values, returning streaks with positions.
+     *
+     * @return List of entries: entry[0]={length, value}, entry[1..n]={row, col}
+     */
+    private ArrayList<int[][]> scanRowsWithPos() {
+        ArrayList<int[][]> finalList = new ArrayList<>();
+        for (int i = 0; i < this.height.get(); i++) {
+            int prev = 0, streak = 0;
+            for (int j = 0; j < this.length.get(); j++) {
+                int cur = this.matrix.get(i).get(j).getValue();
+                if (cur == prev) {
+                    streak++;
+                } else {
+                    if (streak > 0) {
+                        ArrayList<int[]> coords = new ArrayList<>();
+                        for (int k = j - streak - 1; k < j; k++) coords.add(new int[]{i, k});
+                        finalList.add(buildEntry(streak + 1, prev, coords));
+                    }
+                    streak = 0;
+                }
+                prev = cur;
+            }
+            if (streak > 0) {
+                int j = this.length.get();
+                ArrayList<int[]> coords = new ArrayList<>();
+                for (int k = j - streak - 1; k < j; k++) coords.add(new int[]{i, k});
+                finalList.add(buildEntry(streak + 1, prev, coords));
+            }
+        }
+        return finalList;
+    }
+
+    /**
+     * Scans all columns for consecutive identical card values, returning streaks with positions.
+     *
+     * @return List of entries: entry[0]={length, value}, entry[1..n]={row, col}
+     */
+    private ArrayList<int[][]> scanColumnsWithPos() {
+        ArrayList<int[][]> finalList = new ArrayList<>();
+        for (int j = 0; j < this.length.get(); j++) {
+            int prev = 0, streak = 0;
+            for (int i = 0; i < this.height.get(); i++) {
+                int cur = this.matrix.get(i).get(j).getValue();
+                if (cur == prev) {
+                    streak++;
+                } else {
+                    if (streak > 0) {
+                        ArrayList<int[]> coords = new ArrayList<>();
+                        for (int k = i - streak - 1; k < i; k++) coords.add(new int[]{k, j});
+                        finalList.add(buildEntry(streak + 1, prev, coords));
+                    }
+                    streak = 0;
+                }
+                prev = cur;
+            }
+            if (streak > 0) {
+                int i = this.height.get();
+                ArrayList<int[]> coords = new ArrayList<>();
+                for (int k = i - streak - 1; k < i; k++) coords.add(new int[]{k, j});
+                finalList.add(buildEntry(streak + 1, prev, coords));
+            }
+        }
+        return finalList;
+    }
+
+    /**
+     * Scans diagonals (top-left to bottom-right) for consecutive identical card values,
+     * returning streaks with positions.
+     *
+     * @return List of entries: entry[0]={length, value}, entry[1..n]={row, col}
+     */
+    private ArrayList<int[][]> scanDiagonalsWithPos() {
+        ArrayList<int[][]> finalList = new ArrayList<>();
+        ArrayList<int[]> toIgnore = new ArrayList<>();
+
+        for (int i0 = 0; i0 < this.height.get(); i0++) {
+            for (int j0 = 0; j0 < this.length.get(); j0++) {
+                int i = i0, j = j0;
+                int prev = 0, streak = 0;
+                int si = i0, sj = j0; // streak start
+
+                while (i < this.height.get() && j < this.length.get()) {
+                    int cur = this.matrix.get(i).get(j).getValue();
+                    if (cur == prev) {
+                        streak++;
+                    } else {
+                        if (streak > 0) {
+                            int[] endCoord = {i - 1, j - 1};
+                            if (!wasAlreadyFound(toIgnore, endCoord[0], endCoord[1])) {
+                                ArrayList<int[]> coords = new ArrayList<>();
+                                for (int k = 0; k <= streak; k++) coords.add(new int[]{si + k, sj + k});
+                                finalList.add(buildEntry(streak + 1, prev, coords));
+                                toIgnore.add(endCoord);
+                            }
+                        }
+                        streak = 0;
+                        si = i; sj = j;
+                    }
+                    prev = cur;
+                    i++; j++;
+                }
+                if (streak > 0) {
+                    int[] endCoord = {i - 1, j - 1};
+                    if (!wasAlreadyFound(toIgnore, endCoord[0], endCoord[1])) {
+                        ArrayList<int[]> coords = new ArrayList<>();
+                        for (int k = 0; k <= streak; k++) coords.add(new int[]{si + k, sj + k});
+                        finalList.add(buildEntry(streak + 1, prev, coords));
+                        toIgnore.add(endCoord);
+                    }
+                }
+            }
+        }
+        return finalList;
+    }
+
+    /**
+     * Scans anti-diagonals (bottom-left to top-right) for consecutive identical card values,
+     * returning streaks with positions.
+     *
+     * @return List of entries: entry[0]={length, value}, entry[1..n]={row, col}
+     */
+    private ArrayList<int[][]> scanAntiDiagonalsWithPos() {
+        ArrayList<int[][]> finalList = new ArrayList<>();
+        ArrayList<int[]> toIgnore = new ArrayList<>();
+
+        for (int i0 = this.height.get() - 1; i0 >= 0; i0--) {
+            for (int j0 = 0; j0 < this.length.get(); j0++) {
+                int i = i0, j = j0;
+                int prev = 0, streak = 0;
+                int si = i0, sj = j0; // streak start
+
+                while (i >= 0 && j < this.length.get()) {
+                    int cur = this.matrix.get(i).get(j).getValue();
+                    if (cur == prev) {
+                        streak++;
+                    } else {
+                        if (streak > 0) {
+                            int[] endCoord = {i + 1, j - 1};
+                            if (!wasAlreadyFound(toIgnore, endCoord[0], endCoord[1])) {
+                                ArrayList<int[]> coords = new ArrayList<>();
+                                for (int k = 0; k <= streak; k++) coords.add(new int[]{si - k, sj + k});
+                                finalList.add(buildEntry(streak + 1, prev, coords));
+                                toIgnore.add(endCoord);
+                            }
+                        }
+                        streak = 0;
+                        si = i; sj = j;
+                    }
+                    prev = cur;
+                    i--; j++;
+                }
+                if (streak > 0) {
+                    int[] endCoord = {i + 1, j - 1};
+                    if (!wasAlreadyFound(toIgnore, endCoord[0], endCoord[1])) {
+                        ArrayList<int[]> coords = new ArrayList<>();
+                        for (int k = 0; k <= streak; k++) coords.add(new int[]{si - k, sj + k});
+                        finalList.add(buildEntry(streak + 1, prev, coords));
+                        toIgnore.add(endCoord);
+                    }
+                }
+            }
+        }
+        return finalList;
+    }
+
+    /**
+     * Scans the whole deck for consecutive identical card values, returning streaks with positions.
+     *
+     * Each entry is an int[][] where:
+     *   entry[0] = {streak_length, card_value}
+     *   entry[1..n] = {row, col} for each card in the streak
+     *
+     * @return List of all combo entries with coordinates
+     */
+    public ArrayList<int[][]> scanCombosWithPos() {
+        ArrayList<int[][]> list = new ArrayList<>();
+        list.addAll(this.scanRowsWithPos());
+        list.addAll(this.scanColumnsWithPos());
+        list.addAll(this.scanDiagonalsWithPos());
+        list.addAll(this.scanAntiDiagonalsWithPos());
+        return list;
+    }
+
+    /**
      * Removes the full columns made of the same values (by default ignores columns with hidden cards)
      */
     public ArrayList<Card> removeColumns() {

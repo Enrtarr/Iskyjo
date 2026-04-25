@@ -19,7 +19,7 @@ public class Player {
     private static final String DEFAULT_NAME = "Unnamed";
     private static final int DEFAULT_POINTS = 0;
     private static final int DEFAULT_MONEY = 0;
-    private static final int DEFAULT_BONUS_MONEY = 1;
+    private static final int DEFAULT_BONUS_MONEY_RATE = 1;
     private static final int[] DEFAULT_INTERESTS = new int[] {1, 5, 5}; // {amount gained, per slice of X, Y time max}
 
     private Deck deck;
@@ -53,7 +53,7 @@ public class Player {
             DEFAULT_NAME, 
             DEFAULT_POINTS, 
             DEFAULT_MONEY,
-            DEFAULT_BONUS_MONEY,
+            DEFAULT_BONUS_MONEY_RATE,
             DEFAULT_INTERESTS
         );
     }
@@ -75,7 +75,7 @@ public class Player {
             name, 
             DEFAULT_POINTS, 
             DEFAULT_MONEY,
-            DEFAULT_BONUS_MONEY,
+            DEFAULT_BONUS_MONEY_RATE,
             DEFAULT_INTERESTS
         );
     }
@@ -129,7 +129,7 @@ public class Player {
         this.name = (name != null) ? name : DEFAULT_NAME;
         this.points = DEFAULT_POINTS;
         this.money = DEFAULT_MONEY;
-        this.bonusMoneyRate = DEFAULT_BONUS_MONEY;
+        this.bonusMoneyRate = DEFAULT_BONUS_MONEY_RATE;
         this.interests = DEFAULT_INTERESTS;
     }
 

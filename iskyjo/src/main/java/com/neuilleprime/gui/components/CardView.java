@@ -90,7 +90,7 @@ public class CardView extends StackPane {
         //         .asString("-fx-font-size: %.0fpx; -fx-font-family: 'VCR OSD Mono';")
         // );
         this.valueLabel.styleProperty().bind(
-            this.prefWidthProperty().multiply(0.35)
+            this.prefWidthProperty().multiply(0.3)
                 .asString("-fx-font-size: %.0fpx; -fx-font-family: 'VCR OSD Mono';")
         );
 
@@ -130,17 +130,17 @@ public class CardView extends StackPane {
         String color = null;
 
         if (value < 0) {
-            color = "#ff0000";
+            color = "#da3b3b";
         } else if (value == 0) {
-            color = "#000000";
+            color = "#3c2f2f";
         } else if (0 < value && value < 5) {
-            color = "#0080ff";
+            color = "#3ca903";
         } else if (4 < value && value < 8) {
-            color = "#09ff00";
+            color = "#0387a9";
         } else if (7 < value && value < 11) {
-            color = "#e100ff";
+            color = "#5b1baf";
         } else if (10 < value) {
-            color = "#ffdd00";
+            color = "#efbf04";
         }
 
         double[] colorAsDouble = hexToDoubleArray(color);
@@ -194,6 +194,46 @@ public class CardView extends StackPane {
         }
 
         return result;
+    }
+
+    /**
+     * Shake the card with a customizable duration, shake strength (distance), and number of frames for one full cycle.
+     *
+     * @param duration        The total duration of the shake effect in milliseconds.
+     * @param shakeStrength   The maximum distance the card should shake in pixels.
+     * @param numFrames       The number of frames (steps) for one back-and-forth shake cycle.
+     */
+    public void shake(double duration, double shakeStrength, int numFrames) {
+        Timeline shakeTimeline = new Timeline();
+
+        int totalFrames = (int)(duration / (1000.0 / 60));
+        double frameDuration = duration / totalFrames;
+
+        KeyFrame scaleUp = new KeyFrame(Duration.ZERO,
+            event -> {
+                this.setScaleX(1.05);
+                this.setScaleY(1.05);
+            }
+        );
+        shakeTimeline.getKeyFrames().add(scaleUp);
+
+        for (int i = 0; i < totalFrames; i++) {
+            final double angle = shakeStrength * Math.sin(2 * Math.PI * i / numFrames);
+
+            KeyFrame keyFrame = new KeyFrame(
+                Duration.millis(i * frameDuration),
+                event -> this.setRotate(angle)
+            );
+            shakeTimeline.getKeyFrames().add(keyFrame);
+        }
+
+        shakeTimeline.setOnFinished(event -> {
+            this.setRotate(0);
+            this.setScaleX(1.0);
+            this.setScaleY(1.0);
+        });
+
+        shakeTimeline.play();
     }
 
     public Card getCardElem() {

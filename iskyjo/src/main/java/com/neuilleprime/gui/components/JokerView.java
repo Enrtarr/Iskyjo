@@ -3,12 +3,15 @@ package com.neuilleprime.gui.components;
 import com.neuilleprime.jokers.Joker;
 import com.neuilleprime.gui.utils.AssetLoader;
 
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.util.Duration;
 
 public class JokerView extends HBox {
 
@@ -157,6 +160,46 @@ public class JokerView extends HBox {
             this.isRightPaneVisible = false;
             setRightPaneVisibility(this.isRightPaneVisible);
         }
+    }
+
+    /**
+     * Shake the card with a customizable duration, shake strength (distance), and number of frames for one full cycle.
+     *
+     * @param duration        The total duration of the shake effect in milliseconds.
+     * @param shakeStrength   The maximum distance the card should shake in pixels.
+     * @param numFrames       The number of frames (steps) for one back-and-forth shake cycle.
+     */
+    public void shake(double duration, double shakeStrength, int numFrames) {
+        Timeline shakeTimeline = new Timeline();
+
+        int totalFrames = (int)(duration / (1000.0 / 60));
+        double frameDuration = duration / totalFrames;
+
+        KeyFrame scaleUp = new KeyFrame(Duration.ZERO,
+            event -> {
+                this.leftImageView.setScaleX(1.1);
+                this.leftImageView.setScaleY(1.1);
+            }
+        );
+        shakeTimeline.getKeyFrames().add(scaleUp);
+
+        for (int i = 0; i < totalFrames; i++) {
+            final double angle = shakeStrength * Math.sin(2 * Math.PI * i / numFrames);
+
+            KeyFrame keyFrame = new KeyFrame(
+                Duration.millis(i * frameDuration),
+                event -> this.leftImageView.setRotate(angle)
+            );
+            shakeTimeline.getKeyFrames().add(keyFrame);
+        }
+
+        shakeTimeline.setOnFinished(event -> {
+            this.leftImageView.setRotate(0);
+            this.leftImageView.setScaleX(1.0);
+            this.leftImageView.setScaleY(1.0);
+        });
+
+        shakeTimeline.play();
     }
 
     private void setRightPaneVisibility(boolean visible) {

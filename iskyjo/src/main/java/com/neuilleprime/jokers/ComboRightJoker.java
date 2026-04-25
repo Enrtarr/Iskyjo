@@ -15,7 +15,7 @@ public class ComboRightJoker extends Joker {
         this.price = 2;
     }
 
-    public static final JokerCategory CATEGORY = JokerCategory.DECK;
+    public static final JokerCategory CATEGORY = JokerCategory.COMBO;
     @Override
     public JokerCategory getCategory() { return CATEGORY; }
 
@@ -24,11 +24,14 @@ public class ComboRightJoker extends Joker {
     public JokerRarity getRarity() { return RARITY; }
 
     @Override
-    public void apply(ArrayList<int[]> combos) {
-        for (int[] c : combos) {
-            if (c[1] == this.appliesTo) {
-                c[1] = c[1] + this.valueToAdd;
+    public ArrayList<Integer> applyWithPos(ArrayList<int[][]> combos) {
+        ArrayList<Integer> indexes = new ArrayList<>();
+        for (int[][] c : combos) {
+            if (c[0][1] == this.appliesTo) {
+                c[0][1] = c[0][1] + this.valueToAdd;
+                indexes.add(combos.indexOf(c));
             }
         }
+        return indexes;
     }
 }

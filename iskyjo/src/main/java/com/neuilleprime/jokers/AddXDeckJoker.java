@@ -1,5 +1,7 @@
 package com.neuilleprime.jokers;
 
+import java.util.ArrayList;
+
 import com.neuilleprime.game.*;
 
 public class AddXDeckJoker extends Joker {
@@ -18,14 +20,29 @@ public class AddXDeckJoker extends Joker {
     @Override
     public JokerCategory getCategory() { return CATEGORY; }
 
-    public static final JokerRarity RARITY = JokerRarity.COMMON;
+    public static final JokerRarity RARITY = JokerRarity.UNCOMMON;
     @Override
     public JokerRarity getRarity() { return RARITY; }
 
     @Override
     public void apply(Deck deck) {
-        for (Card c : deck.getAllCards()) {
-            c.setValue(c.getValue()+this.value);
+        for (int i=0;i<deck.getHeight();i++) {
+            for (int j=0;j<deck.getLength();j++) {
+                int newVal = deck.getCardAtCoords(i, j).getValue() + this.value;
+                deck.getCardAtCoords(i, j).setValue(newVal);
+            }
         }
+    }
+
+    @Override
+    public ArrayList<Integer[]> applyWithPos(Deck deck) {
+        ArrayList<Integer[]> coords = new ArrayList<>();
+        for (int i=0;i<deck.getHeight();i++) {
+            for (int j=0;j<deck.getLength();j++) {
+                int newVal = deck.getCardAtCoords(i, j).getValue() + this.value;
+                coords.add(new Integer[] {i, j, newVal});
+            }
+        }
+        return coords;
     }
 }

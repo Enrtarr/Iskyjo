@@ -96,6 +96,9 @@ public abstract class Joker {
     public void apply(Pile pile) {};
     public void apply(ArrayList<int[]> combos) {};
 
+    public ArrayList<Integer[]> applyWithPos(Deck deck) {return new ArrayList<>();};
+    public ArrayList<Integer> applyWithPos(ArrayList<int[][]> combos) {return new ArrayList<>();};
+
     // BIEN PENSER A RAJOUTER LE JOKER ICI, DANS LE SHOP, ET DANS LE JOKER LUI-MÊME !
     private static final Map<Class<? extends Joker>, JokerRarity> RARITY_MAP = Map.of(
         AddXCardJoker.class, JokerRarity.COMMON,

@@ -161,8 +161,6 @@ public class ShopScreen {
 
                     // add in the rerolled jokers
                     for (Joker joker : event.jokers) {
-
-
                         JokerView jokerView = new JokerView(joker);
                         jokerView.prefWidthProperty().bind(jokerBox.prefWidthProperty().multiply(1));
                         jokerView.prefHeightProperty().bind(jokerBox.prefHeightProperty().multiply(1));

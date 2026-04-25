@@ -290,11 +290,13 @@ public class GameController {
         int plrPoints = 0;
 
         Map<Player, Deck> playerDecks = new HashMap<>();
+        Map<Player, Integer> playerMoneys = new HashMap<>();
 
         for (Player plr : this.players) {
             // AJOUTER LES JOKERS LÀ
 
             playerDecks.put(plr, plr.getDeck().getFreshDeck());
+            playerMoneys.put(plr, plr.getMoney());
 
             // Remove full columns
             this.discardPile.addCards(plr.getDeck().removeColumns(true));
@@ -426,7 +428,7 @@ public class GameController {
         this.roundScore = scorePerRounds[this.round - 1];
 
         notifyAll(l -> l.onRoundEnded(new RoundEndedEvent(
-            this.roundScore, this.gameState, setup, playerDecks))
+            this.roundScore, this.gameState, setup, playerDecks, playerMoneys))
         );
 
         // only if we didn't lose, we start a new round once everyone is done shopping
