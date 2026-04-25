@@ -38,9 +38,9 @@ public class AssetLoader {
         NP_LOGO            = load("/Assets/NP_logo.png");
         BUTTON_PLAY        = load("/Assets/Buttons/button_play.png");
         BUTTON_LEADERBOARD = load("/Assets/Buttons/button_leaderboard.png");
-        BUTTON_SHOP        = load("/Assets/Buttons/button_blank.png");
-        BUTTON_REROLL      = load("/Assets/Buttons/button_blank.png");
-        BUTTON_NEXT_ROUND   = load("/Assets/Buttons/button_blank.png");
+        BUTTON_SHOP        = load("/Assets/Buttons/button_shop.png");
+        BUTTON_REROLL      = load("/Assets/Buttons/button_reroll.png");
+        BUTTON_NEXT_ROUND   = load("/Assets/Buttons/button_nextround.png");
 
         ASSET_MAP.put("card_back", CARD_BACK);
         ASSET_MAP.put("card_bg", CARD_BG);
