@@ -1,6 +1,10 @@
 package com.neuilleprime.game;
 /**
  * Represents a card with a numeric value and a visibility state.
+ * <p>
+ * Both the value and the hidden flag are backed by JavaFX observable properties
+ * so that UI components can bind to them and react automatically to changes.
+ * </p>
  */
 
 import javafx.beans.property.BooleanProperty;
@@ -10,17 +14,21 @@ import javafx.beans.property.SimpleIntegerProperty;
 
 public class Card {
 
+    /** The default card value used when none is specified. */
     private static final int DEFAULT_VALUE = 6;
+
+    /** The default hidden state used when none is specified. */
     private static final boolean DEFAULT_HIDDEN = true;
 
-    // private int value;
-    // private boolean hidden;
+    /** Observable integer property holding the card's numeric value. */
     private IntegerProperty value;
+
+    /** Observable boolean property holding the card's visibility state. */
     private BooleanProperty hidden;
 
     /**
      * Constructs a card with default value and visibility.
-     * Value = 0, Hidden = true.
+     * Value = {@value #DEFAULT_VALUE}, Hidden = {@value #DEFAULT_HIDDEN}.
      */
     public Card() {
         this(DEFAULT_VALUE, DEFAULT_HIDDEN);
@@ -39,7 +47,7 @@ public class Card {
      * Constructs a card with a specified value and visibility.
      *
      * @param v the value of the card
-     * @param h the visibility state (true if hidden, false otherwise)
+     * @param h the visibility state ({@code true} if hidden, {@code false} otherwise)
      */
     public Card(int v, boolean h) {
         this.value = new SimpleIntegerProperty(v);
@@ -61,39 +69,48 @@ public class Card {
      * @return the card's value
      */
     public int getValue() {
-        // if (this.isHidden()) {
-        //     throw (new IllegalStateException("The card is hidden and can therefor not be shown"));
-        // }
         return this.value.get();
     }
 
     /**
      * Checks whether the card is hidden.
      *
-     * @return true if the card is hidden, false otherwise
+     * @return {@code true} if the card is hidden, {@code false} otherwise
      */
     public boolean isHidden() {
         return this.hidden.get();
     }
 
     /**
-     * Makes the card visible.
+     * Makes the card visible (sets hidden to {@code false}).
      */
     public void show() {
         this.hidden.set(false);;
     }
 
     /**
-     * Hides the card.
+     * Hides the card (sets hidden to {@code true}).
      */
     public void hide() {
         this.hidden.set(true);;
     }
 
+    /**
+     * Returns the observable integer property for the card's value.
+     * Useful for binding UI labels directly to this property.
+     *
+     * @return the {@link IntegerProperty} backing the card's value
+     */
     public IntegerProperty valueProperty() {
         return this.value;
     }
 
+    /**
+     * Returns the observable boolean property for the card's hidden state.
+     * Useful for binding UI components that should react to flip events.
+     *
+     * @return the {@link BooleanProperty} backing the card's visibility
+     */
     public BooleanProperty hiddenProperty() {
         return this.hidden;
     }

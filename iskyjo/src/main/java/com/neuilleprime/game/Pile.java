@@ -8,25 +8,34 @@ import javafx.beans.property.SimpleIntegerProperty;
 /**
  * Represents a pile of cards with utility methods to manage, display,
  * and manipulate the collection.
+ * <p>
+ * The pile size is backed by an observable {@link IntegerProperty} so that
+ * UI components (e.g. {@link com.neuilleprime.gui.components.PileView}) can
+ * react automatically whenever cards are added or removed.
+ * </p>
  */
 public class Pile {
+    /** Default number of cards when size is not specified. */
     private static final int DEFAULT_SIZE = 150;
 
+    /** The ordered list of cards, with the top card at the end. */
     private ArrayList<Card> pile = new ArrayList<Card>();
+
+    /** Observable integer property tracking the current number of cards. */
     private IntegerProperty size;
 
     /**
-     * Creates a pile with the default size.
+     * Creates a pile with the default size ({@value #DEFAULT_SIZE} cards).
      */
     public Pile() {
         this(DEFAULT_SIZE);
     }
 
     /**
-     * Creates a pile with a specific size and initializes
-     * the distribution of card values.
+     * Creates a pile with a specific size and initializes the distribution of
+     * card values to roughly match the game's intended proportions.
      *
-     * @param size total number of cards in the pile
+     * @param size total number of cards to populate the pile with
      */
     public Pile(int size) {
         this.size = new SimpleIntegerProperty(0);
@@ -45,16 +54,20 @@ public class Pile {
             addCard(-1);
             addCards(1, 12);
         }
-
-        // System.out.println(this.size.get());
     }
 
+    /**
+     * Returns the top card of the pile (the last card in the list) without
+     * removing it.
+     *
+     * @return the top {@link Card}, or the last element if the pile is non-empty
+     */
     public Card getTop() {
         return this.pile.get(this.size.get()-1);
     }
 
     /**
-     * Adds multiple cards with values in the range [k, l].
+     * Adds multiple cards with values in the inclusive range {@code [k, l]}.
      *
      * @param k starting value (inclusive)
      * @param l ending value (inclusive)
@@ -66,6 +79,11 @@ public class Pile {
         }
     }
 
+    /**
+     * Adds all cards from the given list to the bottom of this pile.
+     *
+     * @param cards the list of cards to add
+     */
     public void addCards(ArrayList<Card> cards) {
         for (Card c : cards) {
             this.addCard(c);
@@ -73,9 +91,9 @@ public class Pile {
     }
 
     /**
-     * Adds a single card with a given value.
+     * Adds a single new card with the given value.
      *
-     * @param k value of the card
+     * @param k value of the card to add
      */
     public void addCard(int k) {
         this.pile.add(new Card(k));
@@ -83,9 +101,9 @@ public class Pile {
     }
 
     /**
-     * Adds a single card with given by reference.
+     * Adds an existing card instance to the pile.
      *
-     * @param c reference of the card
+     * @param c the card to add
      */
     public void addCard(Card c) {
         this.pile.add(c);
@@ -93,20 +111,21 @@ public class Pile {
     }
 
     /**
-     * Returns the upper card from the pile, while removing it
-     * 
-     * @return The reference to the last card in the pile
+     * Removes and returns the top card of the pile.
+     *
+     * @return the top {@link Card}, or {@code null} if the pile is empty
      */
     public Card pop() {
         return this.pop(0);
     }
 
     /**
-     * Returns the upper card from the pile, while removing it
-     * 
-     * @param n Returns the n-th card from the last
-     * 
-     * @return The reference to the last card in the pile
+     * Removes and returns the {@code n}-th card from the top of the pile
+     * (0-based; {@code 0} means the top card).
+     *
+     * @param n offset from the top (must be &ge; 0)
+     * @return the requested {@link Card}, or {@code null} if the pile is empty
+     * @throws IllegalArgumentException if {@code n} is negative
      */
     public Card pop(int n) {
         if (n < 0) {throw (new IllegalArgumentException("n must be greater or equal than 0"));}
@@ -120,39 +139,40 @@ public class Pile {
     }
 
     /**
-     * Returns the amount of cards currently present in the pile
+     * Returns the number of cards currently in the pile.
+     *
+     * @return current pile size
      */
     public int size() {
         return this.size.get();
     }
 
+    /**
+     * Returns the observable integer property for the pile's size.
+     * Useful for binding UI components that should react to size changes.
+     *
+     * @return the {@link IntegerProperty} backing the pile size
+     */
     public IntegerProperty sizeProperty() {
         return this.size;
     }
 
     /**
-     * Prints all cards without additional information.
+     * Prints all card values without additional metadata.
      */
     public void printAll() {
         printAll(false);
     }
 
     /**
-     * Prints all card values. Optionally displays metadata.
+     * Prints all card values. Optionally displays the total count and a header label.
      *
-     * @param showNumberAndText if true, prints size and label text
+     * @param showNumberAndText if {@code true}, prints the size and a header before the values
      */
     public void printAll(boolean showNumberAndText) { 
         ArrayList<Integer> valuesList = new ArrayList<>();
         for (Card c : this.pile) {
-            // boolean wasHidden = c.isHidden();
-            // if (wasHidden) {
-            //     c.show();
-            // }
             valuesList.add(c.getValue());
-            // if (wasHidden) {
-            //     c.hide();
-            // }
         }
         if (showNumberAndText) {
             System.out.println("Total size of the pile: "+valuesList.size());
@@ -169,9 +189,9 @@ public class Pile {
     }
 
     /**
-     * Reveals the last x cards in the pile.
+     * Reveals the last {@code x} cards (top of the pile).
      *
-     * @param x number of cards to reveal from the end
+     * @param x number of cards to reveal, counting from the top
      */
     public void showAll(int x) {
         for (int i=(this.size.get()-x);i<this.size.get();i++) {
@@ -189,7 +209,7 @@ public class Pile {
     }
 
     /**
-     * Randomly shuffles the pile.
+     * Randomly shuffles the pile using {@link Collections#shuffle}.
      */
     public void shuffle() {
         Collections.shuffle(this.pile);
@@ -203,14 +223,17 @@ public class Pile {
     }
 
     /**
-     * Returns all of the cards in the pile.
+     * Returns the internal list of all cards in the pile.
+     * The top card is at index {@code size - 1}.
+     *
+     * @return the list of all {@link Card}s
      */
     public ArrayList<Card> getAllCards() {
         return this.pile;
     }
 
     /**
-     * Entry point for testing the Pile behavior.
+     * Entry point for testing {@code Pile} behaviour.
      *
      * @param args command-line arguments (unused)
      */

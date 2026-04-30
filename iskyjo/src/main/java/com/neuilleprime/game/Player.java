@@ -1,99 +1,131 @@
 package com.neuilleprime.game;
 
-// package game;
-
 import java.util.ArrayList;
 
 import com.neuilleprime.jokers.*;
 
 /**
  * Represents a player in the game.
- * A player has a deck, jokers, consumables, upgrades, and various stats
- * such as points, money, and interest rates.
+ * <p>
+ * A player owns a {@link Deck}, a collection of {@link Joker}s, consumables,
+ * and upgrades, and tracks statistics such as points, money, interest rates,
+ * and shop reroll state.
+ * </p>
  */
 public class Player {
+    /** Default maximum number of jokers a player can hold. */
     private static final int DEFAULT_MAX_JOKERS = 5;
-    private static final int DEFAULT_MAX_CONSUMABLES = 2;
-    private static final int DEFAULT_SHOP_REROLL_AMOUNT = 3;
-    private static final int DEFAULT_SHOP_REROLL_BASE_PRICE = 2;
-    private static final String DEFAULT_NAME = "Unnamed";
-    private static final int DEFAULT_POINTS = 0;
-    private static final int DEFAULT_MONEY = 0;
-    private static final int DEFAULT_BONUS_MONEY_RATE = 1;
-    private static final int[] DEFAULT_INTERESTS = new int[] {1, 5, 5}; // {amount gained, per slice of X, Y time max}
 
+    /** Default maximum number of consumables a player can hold. */
+    private static final int DEFAULT_MAX_CONSUMABLES = 2;
+
+    /** Default number of jokers returned per shop reroll. */
+    private static final int DEFAULT_SHOP_REROLL_AMOUNT = 3;
+
+    /** Default base price for a shop reroll. */
+    private static final int DEFAULT_SHOP_REROLL_BASE_PRICE = 2;
+
+    /** Default player name when none is provided. */
+    private static final String DEFAULT_NAME = "Unnamed";
+
+    /** Default starting point total. */
+    private static final int DEFAULT_POINTS = 0;
+
+    /** Default starting money. */
+    private static final int DEFAULT_MONEY = 0;
+
+    /** Default bonus money multiplier. */
+    private static final int DEFAULT_BONUS_MONEY_RATE = 1;
+
+    /**
+     * Default interest thresholds: {@code {amount_gained, per_slice_of_X, Y_times_max}}.
+     */
+    private static final int[] DEFAULT_INTERESTS = new int[] {1, 5, 5};
+
+    /** The player's card deck. */
     private Deck deck;
+
+    /** The player's currently held jokers. */
     private ArrayList<Joker> jokers;
+
+    /** Maximum number of jokers the player can hold simultaneously. */
     private int maxJokers;
+
+    /** The player's consumable jokers. */
     private ArrayList<Joker> consumables;
+
+    /** Maximum number of consumables the player can hold simultaneously. */
     private int maxConsumables;
+
+    /** The player's passive upgrade jokers. */
     private ArrayList<Joker> upgrades;
+
+    /** Number of jokers shown per shop reroll. */
     private int shopRerollAmount;
+
+    /** Base price for a shop reroll (resets each round). */
     private int shopRerollBasePrice;
+
+    /** Current price for the next shop reroll (increases after each reroll). */
     private int shopRerollPrice;
+
+    /** Display name of the player. */
     private String name;
+
+    /** Total accumulated points across all rounds. */
     private int points;
+
+    /** Current money balance. */
     private int money;
+
+    /** Multiplier applied to bonus money earned by exceeding the round quota. */
     private int bonusMoneyRate;
+
+    /**
+     * Interest thresholds in the form {@code {amount_gained, per_slice_of_X, Y_times_max}}.
+     */
     private int[] interests;
 
     /**
-     * Default constructor initializing player with default values.
+     * Constructs a player with all default values.
      */
     public Player() {
         this(
-            new Deck(), 
-            null, 
-            DEFAULT_MAX_JOKERS, 
-            null, 
-            DEFAULT_MAX_CONSUMABLES, 
-            null,
-            DEFAULT_SHOP_REROLL_AMOUNT,
-            DEFAULT_SHOP_REROLL_BASE_PRICE,
-            DEFAULT_NAME, 
-            DEFAULT_POINTS, 
-            DEFAULT_MONEY,
-            DEFAULT_BONUS_MONEY_RATE,
-            DEFAULT_INTERESTS
+            new Deck(), null, DEFAULT_MAX_JOKERS, null, DEFAULT_MAX_CONSUMABLES, null,
+            DEFAULT_SHOP_REROLL_AMOUNT, DEFAULT_SHOP_REROLL_BASE_PRICE,
+            DEFAULT_NAME, DEFAULT_POINTS, DEFAULT_MONEY, DEFAULT_BONUS_MONEY_RATE, DEFAULT_INTERESTS
         );
     }
 
     /**
-     * Constructor initializing player with a given name.
-     * @param name the player's name
+     * Constructs a player with the given name and all other values at defaults.
+     *
+     * @param name the player's display name
      */
     public Player(String name) {
         this(
-            new Deck(), 
-            null, 
-            DEFAULT_MAX_JOKERS, 
-            null, 
-            DEFAULT_MAX_CONSUMABLES, 
-            null,
-            DEFAULT_SHOP_REROLL_AMOUNT,
-            DEFAULT_SHOP_REROLL_BASE_PRICE,
-            name, 
-            DEFAULT_POINTS, 
-            DEFAULT_MONEY,
-            DEFAULT_BONUS_MONEY_RATE,
-            DEFAULT_INTERESTS
+            new Deck(), null, DEFAULT_MAX_JOKERS, null, DEFAULT_MAX_CONSUMABLES, null,
+            DEFAULT_SHOP_REROLL_AMOUNT, DEFAULT_SHOP_REROLL_BASE_PRICE,
+            name, DEFAULT_POINTS, DEFAULT_MONEY, DEFAULT_BONUS_MONEY_RATE, DEFAULT_INTERESTS
         );
     }
 
     /**
-     * Full constructor for Player.
-     * 
-     * @param deck the player's deck
-     * @param jokers the list of jokers
-     * @param maxJokers maximum number of jokers allowed
-     * @param consumables the list of consumables
-     * @param maxConsumables maximum number of consumables allowed
-     * @param upgrades the list of upgrades
-     * @param name the player's name
-     * @param points the player's points
-     * @param money the player's money
-     * @param bonusMoneyRate bonus money multiplier
-     * @param interests interest thresholds
+     * Full constructor for {@code Player}.
+     *
+     * @param deck                 the player's deck ({@code null} creates a new empty deck)
+     * @param jokers               the player's jokers ({@code null} creates an empty list)
+     * @param maxJokers            maximum number of jokers allowed
+     * @param consumables          the player's consumables ({@code null} creates an empty list)
+     * @param maxConsumables       maximum number of consumables allowed
+     * @param upgrades             the player's upgrades ({@code null} creates an empty list)
+     * @param shopRerollAmount     number of jokers shown per reroll
+     * @param shopRerollBasePrice  base price per reroll
+     * @param name                 display name ({@code null} falls back to {@value #DEFAULT_NAME})
+     * @param points               starting point total
+     * @param money                starting money balance
+     * @param bonusMoneyRate       bonus money multiplier
+     * @param interests            interest thresholds {@code {gained, per_X, max_Y}}
      */
     public Player(Deck deck, ArrayList<Joker> jokers, int maxJokers,
                 ArrayList<Joker> consumables, int maxConsumables,
@@ -116,6 +148,9 @@ public class Player {
         this.interests = interests;
     }
 
+    /**
+     * Resets all player state to default values, preserving the player's name.
+     */
     public void resetPlayer() {
         this.deck = new Deck();
         this.jokers = new ArrayList<>();
@@ -135,225 +170,199 @@ public class Player {
 
     /**
      * Returns the player's deck.
-     * @return the deck
+     *
+     * @return the {@link Deck}
      */
-    public Deck getDeck() {
-        return deck;
-    }
+    public Deck getDeck() { return deck; }
 
     /**
      * Sets the player's deck.
-     * @param deck the deck to set
+     *
+     * @param deck the new deck ({@code null} creates a new empty deck)
      */
-    public void setDeck(Deck deck) {
-        this.deck = (deck != null) ? deck : new Deck();
-    }
+    public void setDeck(Deck deck) { this.deck = (deck != null) ? deck : new Deck(); }
 
     /**
-     * Returns the list of jokers.
-     * @return the jokers
+     * Returns the player's list of jokers.
+     *
+     * @return the joker list
      */
-    public ArrayList<Joker> getJokers() {
-        return this.jokers;
-    }
+    public ArrayList<Joker> getJokers() { return this.jokers; }
 
     /**
-     * Sets the list of jokers.
-     * @param jokers the jokers to set
+     * Sets the player's joker list.
+     *
+     * @param jokers the new list ({@code null} creates an empty list)
      */
-    public void setJokers(ArrayList<Joker> jokers) {
-        this.jokers = (jokers != null) ? jokers : new ArrayList<>();
-    }
+    public void setJokers(ArrayList<Joker> jokers) { this.jokers = (jokers != null) ? jokers : new ArrayList<>(); }
 
     /**
-     * Returns the maximum number of jokers allowed.
-     * @return maxJokers
+     * Returns the maximum number of jokers the player can hold.
+     *
+     * @return max joker count
      */
-    public int getMaxJokers() {
-        return maxJokers;
-    }
+    public int getMaxJokers() { return maxJokers; }
 
     /**
      * Sets the maximum number of jokers allowed.
-     * @param maxJokers the maximum to set
+     *
+     * @param maxJokers new maximum
      */
-    public void setMaxJokers(int maxJokers) {
-        this.maxJokers = maxJokers;
-    }
+    public void setMaxJokers(int maxJokers) { this.maxJokers = maxJokers; }
 
     /**
-     * Returns the list of consumables.
-     * @return the consumables
+     * Returns the player's list of consumable jokers.
+     *
+     * @return the consumable list
      */
-    public ArrayList<Joker> getConsumables() {
-        return this.consumables;
-    }
+    public ArrayList<Joker> getConsumables() { return this.consumables; }
 
     /**
-     * Sets the list of consumables.
-     * @param consumables the consumables to set
+     * Sets the player's consumable list.
+     *
+     * @param consumables the new list ({@code null} creates an empty list)
      */
-    public void setConsumables(ArrayList<Joker> consumables) {
-        this.consumables = (consumables != null) ? consumables : new ArrayList<>();
-    }
+    public void setConsumables(ArrayList<Joker> consumables) { this.consumables = (consumables != null) ? consumables : new ArrayList<>(); }
 
     /**
-     * Returns the maximum number of consumables allowed.
-     * @return maxConsumables
+     * Returns the maximum number of consumables the player can hold.
+     *
+     * @return max consumable count
      */
-    public int getMaxConsumables() {
-        return this.maxConsumables;
-    }
+    public int getMaxConsumables() { return this.maxConsumables; }
 
     /**
      * Sets the maximum number of consumables allowed.
-     * @param maxConsumables the maximum to set
+     *
+     * @param maxConsumables new maximum
      */
-    public void setMaxConsumables(int maxConsumables) {
-        this.maxConsumables = maxConsumables;
-    }
+    public void setMaxConsumables(int maxConsumables) { this.maxConsumables = maxConsumables; }
 
     /**
-     * Returns the list of upgrades.
-     * @return the upgrades
+     * Returns the player's list of upgrade jokers.
+     *
+     * @return the upgrade list
      */
-    public ArrayList<Joker> getUpgrades() {
-        return this.upgrades;
-    }
+    public ArrayList<Joker> getUpgrades() { return this.upgrades; }
 
     /**
-     * Sets the list of upgrades.
-     * @param upgrades the upgrades to set
+     * Sets the player's upgrade list.
+     *
+     * @param upgrades the new list ({@code null} creates an empty list)
      */
-    public void setUpgrades(ArrayList<Joker> upgrades) {
-        this.upgrades = (upgrades != null) ? upgrades : new ArrayList<>();
-    }
+    public void setUpgrades(ArrayList<Joker> upgrades) { this.upgrades = (upgrades != null) ? upgrades : new ArrayList<>(); }
 
     /**
-     * Returns the player's shop reroll amount (amount of jokers returned per reroll).
-     * @return the amount
+     * Returns the number of jokers shown per shop reroll.
+     *
+     * @return shop reroll amount
      */
-    public int getShopRerollAmount() {
-        return this.shopRerollAmount;
-    }
+    public int getShopRerollAmount() { return this.shopRerollAmount; }
 
     /**
-     * Sets the player's amount of jokers return per reroll.
-     * @param amount the amount to set
+     * Sets the number of jokers shown per shop reroll.
+     *
+     * @param amount the new reroll amount
      */
-    public void setShopRerollAmount(int amount) {
-        this.shopRerollAmount = amount;
-    }
+    public void setShopRerollAmount(int amount) { this.shopRerollAmount = amount; }
 
     /**
-     * Returns the player's base shop reroll price.
-     * @return the amount
+     * Returns the base price for a shop reroll.
+     *
+     * @return shop reroll base price
      */
-    public int getShopRerollBasePrice() {
-        return this.shopRerollBasePrice;
-    }
+    public int getShopRerollBasePrice() { return this.shopRerollBasePrice; }
 
     /**
-     * Sets the player's base reroll price.
-     * @param price the price to set
+     * Sets the base price for a shop reroll.
+     *
+     * @param price the new base price
      */
-    public void setShopRerollBasePrice(int price) {
-        this.shopRerollBasePrice = price;
-    }
+    public void setShopRerollBasePrice(int price) { this.shopRerollBasePrice = price; }
 
     /**
-     * Returns the player's shop reroll price.
-     * @return the amount
+     * Returns the current price of the next shop reroll.
+     * This increases after each reroll within a round.
+     *
+     * @return current reroll price
      */
-    public int getShopRerollPrice() {
-        return this.shopRerollPrice;
-    }
+    public int getShopRerollPrice() { return this.shopRerollPrice; }
 
     /**
-     * Sets the player's reroll price.
-     * @param price the price to set
+     * Sets the current reroll price.
+     *
+     * @param price the new reroll price
      */
-    public void setShopRerollPrice(int price) {
-        this.shopRerollPrice = price;
-    }
+    public void setShopRerollPrice(int price) { this.shopRerollPrice = price; }
 
     /**
-     * Returns the player's name.
+     * Returns the player's display name.
+     *
      * @return the name
      */
-    public String getName() {
-        return this.name;
-    }
+    public String getName() { return this.name; }
 
     /**
-     * Sets the player's name.
-     * @param name the name to set
+     * Sets the player's display name.
+     *
+     * @param name the new name ({@code null} falls back to {@value #DEFAULT_NAME})
      */
-    public void setName(String name) {
-        this.name = (name != null) ? name : DEFAULT_NAME;
-    }
+    public void setName(String name) { this.name = (name != null) ? name : DEFAULT_NAME; }
 
     /**
-     * Returns the player's points.
-     * @return the points
+     * Returns the player's total accumulated points.
+     *
+     * @return point total
      */
-    public int getPoints() {
-        return this.points;
-    }
+    public int getPoints() { return this.points; }
 
     /**
-     * Sets the player's points.
-     * @param points the points to set
+     * Sets the player's total accumulated points.
+     *
+     * @param points the new point total
      */
-    public void setPoints(int points) {
-        this.points = points;
-    }
+    public void setPoints(int points) { this.points = points; }
 
     /**
-     * Returns the player's money.
-     * @return the money
+     * Returns the player's current money balance.
+     *
+     * @return money balance
      */
-    public int getMoney() {
-        return this.money;
-    }
+    public int getMoney() { return this.money; }
 
     /**
-     * Sets the player's money.
-     * @param money the money to set
+     * Sets the player's money balance.
+     *
+     * @param money the new balance
      */
-    public void setMoney(int money) {
-        this.money = money;
-    }
+    public void setMoney(int money) { this.money = money; }
 
     /**
-     * Returns the bonus money rate.
-     * @return the bonusMoneyRate
+     * Returns the bonus money rate multiplier applied when the player exceeds
+     * their share of the round quota.
+     *
+     * @return bonus money rate
      */
-    public int getBonusMoneyRate() {
-        return this.bonusMoneyRate;
-    }
+    public int getBonusMoneyRate() { return this.bonusMoneyRate; }
 
     /**
-     * Sets the bonus money rate.
-     * @param bonusMoney the bonus rate to set
+     * Sets the bonus money rate multiplier.
+     *
+     * @param bonusMoney the new multiplier
      */
-    public void setBonusMoneyRate(int bonusMoney) {
-        this.bonusMoneyRate = bonusMoney;
-    }
+    public void setBonusMoneyRate(int bonusMoney) { this.bonusMoneyRate = bonusMoney; }
 
     /**
-     * Returns the interest thresholds.
+     * Returns the interest thresholds as {@code {amount_gained, per_slice_of_X, Y_times_max}}.
+     *
      * @return the interests array
      */
-    public int[] getInterests() {
-        return this.interests;
-    }
+    public int[] getInterests() { return this.interests; }
 
     /**
      * Sets the interest thresholds.
-     * @param interests the interests to set
+     *
+     * @param interests the new thresholds array
      */
-    public void setInterests(int[] interests) {
-        this.interests = interests;
-    }
+    public void setInterests(int[] interests) { this.interests = interests; }
 }

@@ -1,4 +1,3 @@
-
 package com.neuilleprime.game;
 
 import java.util.ArrayList;
@@ -7,21 +6,38 @@ import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 
 /**
- * Represents a 2D deck of cards with rows and columns.
- * Supports adding/removing rows and columns, scanning for streaks in rows, columns, and diagonals.
+ * Represents a 2-D grid of {@link Card}s with rows and columns.
+ * <p>
+ * The deck supports dynamic row/column addition and removal, card retrieval
+ * by coordinate, and streak-scanning in all four directions (rows, columns,
+ * diagonals, anti-diagonals) used during end-of-round scoring.
+ * Both the current length (columns) and height (rows) are backed by observable
+ * {@link IntegerProperty}s so that UI components can bind to them.
+ * </p>
  */
 public class Deck {
+    /** Default maximum number of columns. */
     private static final int DEFAULT_MAX_LENGTH = 4;
+
+    /** Default maximum number of rows. */
     private static final int DEFAULT_MAX_HEIGHT = 3;
 
-    // private int length;
-    // private int height;
+    /** Observable integer property for the current number of columns. */
     private IntegerProperty length;
+
+    /** Observable integer property for the current number of rows. */
     private IntegerProperty height;
+
+    /** Maximum number of columns this deck can hold. */
     private int maxLength;
+
+    /** Maximum number of rows this deck can hold. */
     private int maxHeight;
 
-    /** Matrix storing the cards row by row */
+    /**
+     * Row-major matrix storing the cards.
+     * {@code matrix.get(row).get(col)} gives the card at that position.
+     */
     ArrayList<ArrayList<Card>> matrix = new ArrayList<>();
 
     /**
@@ -34,8 +50,8 @@ public class Deck {
     /**
      * Constructs a Deck with specified maximum length and height.
      *
-     * @param l Maximum number of columns
-     * @param h Maximum number of rows
+     * @param l maximum number of columns
+     * @param h maximum number of rows
      */
     public Deck(int l, int h) {
         this.length = new SimpleIntegerProperty(0);
@@ -45,9 +61,10 @@ public class Deck {
     }
 
     /**
-     * Removes the row at the specified index.
+     * Removes and returns the row at the given index.
      *
-     * @param j Index of the row to remove
+     * @param j index of the row to remove (0-based)
+     * @return the removed row, or {@code null} if the deck is already empty
      */
     public ArrayList<Card> removeRow(int j) {
         if (this.height.get() != 0) {
@@ -61,10 +78,13 @@ public class Deck {
     }
 
     /**
-     * Adds a row of cards to the deck.
-     * Initializes deck length if adding the first row.
+     * Appends a row of cards to the deck.
+     * <p>
+     * If this is the first row added, it also fixes the deck's column count.
+     * Subsequent rows must have the same size as the first.
+     * </p>
      *
-     * @param row Row of cards to add
+     * @param row row of cards to add; must match the existing column count (if any)
      */
     public void addRow(ArrayList<Card> row) {
         if (this.height.get() + 1 <= this.maxHeight) {
@@ -86,9 +106,10 @@ public class Deck {
     }
 
     /**
-     * Removes the column at the specified index.
+     * Removes and returns all cards in the column at the given index.
      *
-     * @param i Index of the column to remove
+     * @param i index of the column to remove (0-based)
+     * @return the removed column as a flat list, or {@code null} if the deck is empty
      */
     public ArrayList<Card> removeColumn(int i) {
         if (this.length.get() != 0) {
@@ -106,9 +127,9 @@ public class Deck {
     }
 
     /**
-     * Adds a column of cards to the deck.
+     * Appends a column of cards to the right of the deck.
      *
-     * @param col Column of cards to add
+     * @param col column of cards to add; must have {@link #getHeight()} elements
      */
     public void addColumn(ArrayList<Card> col) {
         if (this.length.get() + 1 <= this.maxLength) {
@@ -130,7 +151,7 @@ public class Deck {
     /**
      * Returns the current number of columns.
      *
-     * @return Current length of the deck
+     * @return current column count
      */
     public int getLength() {
         return this.length.get();
@@ -139,38 +160,54 @@ public class Deck {
     /**
      * Returns the current number of rows.
      *
-     * @return Current height of the deck
+     * @return current row count
      */
     public int getHeight() {
         return this.height.get();
     }
 
-        /**
-     * Returns the maximum number of columns.
+    /**
+     * Returns the maximum number of columns this deck can hold.
      *
-     * @return Maximum length of the deck
+     * @return maximum column count
      */
     public int getMaxLength() {
         return this.maxLength;
     }
 
     /**
-     * Returns the maximum number of rows.
+     * Returns the maximum number of rows this deck can hold.
      *
-     * @return Maximum height of the deck
+     * @return maximum row count
      */
     public int getMaxHeight() {
         return this.maxHeight;
     }
 
+    /**
+     * Returns the observable integer property for the current column count.
+     *
+     * @return length property
+     */
     public IntegerProperty lengthProperty() {
         return this.length;
     }
 
+    /**
+     * Returns the observable integer property for the current row count.
+     *
+     * @return height property
+     */
     public IntegerProperty heightProperty() {
         return this.height;
     }
 
+    /**
+     * Creates a deep copy of this deck with all card values and hidden states
+     * preserved. The copy has the same max dimensions.
+     *
+     * @return a new {@code Deck} instance with cloned cards
+     */
     public Deck getFreshDeck() {
         Deck newDeck = new Deck(this.maxLength, this.maxHeight);
         for (ArrayList<Card> row : this.matrix) {
@@ -183,6 +220,12 @@ public class Deck {
         return newDeck;
     }
 
+    /**
+     * Returns {@code true} if there is a card at the given coordinates.
+     *
+     * @param coords {@code [row, col]} coordinates to check
+     * @return {@code true} if the coordinates are within bounds
+     */
     public boolean hasCardAtCoords(int[] coords) {
         if (coords[0] <= this.height.get() && coords[1] <= this.length.get()) {
             return true;
@@ -192,6 +235,13 @@ public class Deck {
         }
     }
 
+    /**
+     * Returns {@code true} if there is a card at the given row and column.
+     *
+     * @param h row index (0-based)
+     * @param l column index (0-based)
+     * @return {@code true} if the coordinates are within bounds
+     */
     public boolean hasCardAtCoords(int h, int l) {
         if (h <= this.height.get() && l <= this.length.get()) {
             return true;
@@ -201,6 +251,13 @@ public class Deck {
         }
     }
 
+    /**
+     * Returns the card at the given {@code [row, col]} coordinates.
+     *
+     * @param coords {@code [row, col]} coordinates
+     * @return the {@link Card} at those coordinates
+     * @throws IllegalArgumentException if no card exists at the coordinates
+     */
     public Card getCardAtCoords(int[] coords) {
         if (!this.hasCardAtCoords(coords)) {
             throw (new IllegalArgumentException("No card at these coordinates"));
@@ -208,6 +265,14 @@ public class Deck {
         return this.matrix.get(coords[0]).get(coords[1]);
     }
 
+    /**
+     * Returns the card at the given row and column.
+     *
+     * @param h row index (0-based)
+     * @param l column index (0-based)
+     * @return the {@link Card} at that position
+     * @throws IllegalArgumentException if no card exists at the coordinates
+     */
     public Card getCardAtCoords(int h, int l) {
         if (!this.hasCardAtCoords(h, l)) {
             throw (new IllegalArgumentException("No card at these coordinates"));
@@ -215,6 +280,13 @@ public class Deck {
         return this.matrix.get(h).get(l);
     }
 
+    /**
+     * Replaces the card at the given {@code [row, col]} coordinates.
+     *
+     * @param coords {@code [row, col]} coordinates
+     * @param card   the card to place at those coordinates
+     * @throws IllegalArgumentException if no card exists at the coordinates
+     */
     public void setCardAtCoords(int[] coords, Card card) {
         if (!this.hasCardAtCoords(coords)) {
             throw (new IllegalArgumentException("No card at these coordinates"));
@@ -222,6 +294,14 @@ public class Deck {
         this.matrix.get(coords[0]).set(coords[1], card);
     }
 
+    /**
+     * Replaces the card at the given row and column.
+     *
+     * @param h    row index (0-based)
+     * @param l    column index (0-based)
+     * @param card the card to place at that position
+     * @throws IllegalArgumentException if no card exists at the coordinates
+     */
     public void setCardAtCoords(int h, int l, Card card) {
         if (!this.hasCardAtCoords(h, l)) {
             throw (new IllegalArgumentException("No card at these coordinates"));
@@ -229,6 +309,11 @@ public class Deck {
         this.matrix.get(h).set(l, card);
     }
 
+    /**
+     * Returns {@code true} if at least one card in the deck is still hidden.
+     *
+     * @return {@code true} if any hidden card exists
+     */
     public boolean hasHiddenCard() {
         for (ArrayList<Card> row : this.matrix) {
             for (Card c : row) {
@@ -241,9 +326,9 @@ public class Deck {
     }
 
     /**
-     * Returns all cards in the deck as a flat list.
+     * Returns all cards in the deck as a flat list in row-major order.
      *
-     * @return List of all cards
+     * @return list of all {@link Card}s
      */
     public ArrayList<Card> getAllCards() {
         ArrayList<Card> cards = new ArrayList<>();
@@ -255,6 +340,9 @@ public class Deck {
         return cards;
     }
 
+    /**
+     * Removes all rows and columns, resetting the deck to an empty state.
+     */
     public void clear() {
         for (ArrayList<Card> row : this.matrix) {
             row.clear();
@@ -265,7 +353,8 @@ public class Deck {
     }
 
     /**
-     * Prints the deck to the console in a 2D format.
+     * Prints the deck to the console in a 2-D format.
+     * Hidden cards are suffixed with {@code h}.
      */
     public void printAll() {
         System.out.println("[");
@@ -284,6 +373,13 @@ public class Deck {
         System.out.println("]");
     }
 
+    /**
+     * Toggles the visibility of the card at the given coordinates.
+     * If the card is currently hidden it is shown, and vice-versa.
+     *
+     * @param cardCoords {@code [row, col]} coordinates of the card to flip
+     * @throws IllegalArgumentException if no card exists at the coordinates
+     */
     public void flipCard(int[] cardCoords) {
         if(!this.hasCardAtCoords(cardCoords)) {
             throw (new IllegalArgumentException("No card at these coordinates"));
@@ -297,6 +393,15 @@ public class Deck {
         }
     }
 
+    /**
+     * Replaces the card at the given coordinates with {@code newCard} and
+     * returns the old card.
+     *
+     * @param cardCoords {@code [row, col]} coordinates of the card to replace
+     * @param newCard    the new card to place at those coordinates
+     * @return the card that was previously at those coordinates
+     * @throws IllegalArgumentException if no card exists at the coordinates
+     */
     public Card replaceCard(int[] cardCoords, Card newCard) {
         if(!this.hasCardAtCoords(cardCoords)) {
             throw (new IllegalArgumentException("No card at these coordinates"));
@@ -309,9 +414,10 @@ public class Deck {
     }
 
     /**
-     * Scans all rows for consecutive identical card values and returns streaks.
+     * Scans all rows for consecutive identical card values and returns the streaks.
+     * Each entry is {@code {streak_length, card_value}}.
      *
-     * @return List of streaks, each as {streak length, card value}
+     * @return list of streaks found across all rows
      */
     private ArrayList<int[]> scanRows() {
         ArrayList<int[]> finalList = new ArrayList<>();
@@ -338,9 +444,10 @@ public class Deck {
     }
 
     /**
-     * Scans all columns for consecutive identical card values and returns streaks.
+     * Scans all columns for consecutive identical card values and returns the streaks.
+     * Each entry is {@code {streak_length, card_value}}.
      *
-     * @return List of streaks, each as {streak length, card value}
+     * @return list of streaks found across all columns
      */
     private ArrayList<int[]> scanColumns() {
         ArrayList<int[]> finalList = new ArrayList<>();
@@ -367,12 +474,13 @@ public class Deck {
     }
 
     /**
-     * Checks if a specific coordinate has already been counted in streaks.
+     * Returns {@code true} if the coordinate {@code (i, j)} is already present
+     * in the {@code toIgnore} list (used by diagonal scanners to avoid double-counting).
      *
-     * @param toIgnore List of coordinates to ignore
-     * @param i Row index
-     * @param j Column index
-     * @return true if coordinates were already counted, false otherwise
+     * @param toIgnore list of already-recorded end coordinates
+     * @param i        row index to check
+     * @param j        column index to check
+     * @return {@code true} if the coordinate was already found
      */
     private boolean wasAlreadyFound(ArrayList<int[]> toIgnore, int i, int j) {
         boolean wasAlrFound = false;
@@ -385,9 +493,10 @@ public class Deck {
     }
 
     /**
-     * Scans diagonals (top-left to bottom-right) for consecutive identical card values.
+     * Scans top-left-to-bottom-right diagonals for consecutive identical card values.
+     * Each entry is {@code {streak_length, card_value}}.
      *
-     * @return List of streaks, each as {streak length, card value}
+     * @return list of streaks found on the main diagonals
      */
     private ArrayList<int[]> scanDiagonals() {
         ArrayList<int[]> finalList = new ArrayList<>();
@@ -430,9 +539,10 @@ public class Deck {
     }
 
     /**
-     * Scans anti-diagonals (bottom-left to top-right) for consecutive identical card values.
+     * Scans bottom-left-to-top-right anti-diagonals for consecutive identical card values.
+     * Each entry is {@code {streak_length, card_value}}.
      *
-     * @return List of streaks, each as {streak length, card value}
+     * @return list of streaks found on the anti-diagonals
      */
     private ArrayList<int[]> scanAntiDiagonals() {
         ArrayList<int[]> finalList = new ArrayList<>();
@@ -475,9 +585,11 @@ public class Deck {
     }
 
     /**
-     * Scans the whole deck for consecutive identical card values.
+     * Scans the entire deck for consecutive identical card values in all four
+     * directions and returns all streaks as a flat list.
+     * Each entry is {@code {streak_length, card_value}}.
      *
-     * @return List of all streaks, each as {streak length, card value}
+     * @return list of all streaks found in the deck
      */
     public ArrayList<int[]> scanCombos() {
         ArrayList<int[]> list = new ArrayList<>();
@@ -491,8 +603,19 @@ public class Deck {
     }
 
     /**
-     * Builds a single combo entry: entry[0] = {streak_length, card_value},
-     * entry[1..n] = {row, col} for each card in the streak.
+     * Builds a single combo entry with positional data.
+     * <p>
+     * The returned array has the following structure:
+     * <ul>
+     *   <li>{@code entry[0] = {streak_length, card_value}}</li>
+     *   <li>{@code entry[1..n] = {row, col}} for each card in the streak</li>
+     * </ul>
+     * </p>
+     *
+     * @param length the streak length
+     * @param value  the card value shared by all cards in the streak
+     * @param coords list of {@code [row, col]} coordinates for each card
+     * @return the assembled combo entry
      */
     private int[][] buildEntry(int length, int value, ArrayList<int[]> coords) {
         int[][] entry = new int[coords.size() + 1][];
@@ -504,9 +627,11 @@ public class Deck {
     }
 
     /**
-     * Scans all rows for consecutive identical card values, returning streaks with positions.
+     * Scans all rows for consecutive identical card values, returning streaks
+     * together with the coordinates of every contributing card.
      *
-     * @return List of entries: entry[0]={length, value}, entry[1..n]={row, col}
+     * @return list of entries where {@code entry[0]={length, value}} and
+     *         {@code entry[1..n]={row, col}}
      */
     private ArrayList<int[][]> scanRowsWithPos() {
         ArrayList<int[][]> finalList = new ArrayList<>();
@@ -537,9 +662,11 @@ public class Deck {
     }
 
     /**
-     * Scans all columns for consecutive identical card values, returning streaks with positions.
+     * Scans all columns for consecutive identical card values, returning streaks
+     * together with the coordinates of every contributing card.
      *
-     * @return List of entries: entry[0]={length, value}, entry[1..n]={row, col}
+     * @return list of entries where {@code entry[0]={length, value}} and
+     *         {@code entry[1..n]={row, col}}
      */
     private ArrayList<int[][]> scanColumnsWithPos() {
         ArrayList<int[][]> finalList = new ArrayList<>();
@@ -570,10 +697,11 @@ public class Deck {
     }
 
     /**
-     * Scans diagonals (top-left to bottom-right) for consecutive identical card values,
-     * returning streaks with positions.
+     * Scans top-left-to-bottom-right diagonals for consecutive identical card values,
+     * returning streaks together with the coordinates of every contributing card.
      *
-     * @return List of entries: entry[0]={length, value}, entry[1..n]={row, col}
+     * @return list of entries where {@code entry[0]={length, value}} and
+     *         {@code entry[1..n]={row, col}}
      */
     private ArrayList<int[][]> scanDiagonalsWithPos() {
         ArrayList<int[][]> finalList = new ArrayList<>();
@@ -583,7 +711,7 @@ public class Deck {
             for (int j0 = 0; j0 < this.length.get(); j0++) {
                 int i = i0, j = j0;
                 int prev = 0, streak = 0;
-                int si = i0, sj = j0; // streak start
+                int si = i0, sj = j0;
 
                 while (i < this.height.get() && j < this.length.get()) {
                     int cur = this.matrix.get(i).get(j).getValue();
@@ -620,10 +748,11 @@ public class Deck {
     }
 
     /**
-     * Scans anti-diagonals (bottom-left to top-right) for consecutive identical card values,
-     * returning streaks with positions.
+     * Scans bottom-left-to-top-right anti-diagonals for consecutive identical card
+     * values, returning streaks together with the coordinates of every contributing card.
      *
-     * @return List of entries: entry[0]={length, value}, entry[1..n]={row, col}
+     * @return list of entries where {@code entry[0]={length, value}} and
+     *         {@code entry[1..n]={row, col}}
      */
     private ArrayList<int[][]> scanAntiDiagonalsWithPos() {
         ArrayList<int[][]> finalList = new ArrayList<>();
@@ -633,7 +762,7 @@ public class Deck {
             for (int j0 = 0; j0 < this.length.get(); j0++) {
                 int i = i0, j = j0;
                 int prev = 0, streak = 0;
-                int si = i0, sj = j0; // streak start
+                int si = i0, sj = j0;
 
                 while (i >= 0 && j < this.length.get()) {
                     int cur = this.matrix.get(i).get(j).getValue();
@@ -670,13 +799,18 @@ public class Deck {
     }
 
     /**
-     * Scans the whole deck for consecutive identical card values, returning streaks with positions.
+     * Scans the entire deck for consecutive identical card values in all four
+     * directions, returning each streak together with the grid coordinates of
+     * every card that belongs to it.
+     * <p>
+     * Each entry is an {@code int[][]} where:
+     * <ul>
+     *   <li>{@code entry[0] = {streak_length, card_value}}</li>
+     *   <li>{@code entry[1..n] = {row, col}} for each card in the streak</li>
+     * </ul>
+     * </p>
      *
-     * Each entry is an int[][] where:
-     *   entry[0] = {streak_length, card_value}
-     *   entry[1..n] = {row, col} for each card in the streak
-     *
-     * @return List of all combo entries with coordinates
+     * @return list of all combo entries with their card coordinates
      */
     public ArrayList<int[][]> scanCombosWithPos() {
         ArrayList<int[][]> list = new ArrayList<>();
@@ -688,22 +822,26 @@ public class Deck {
     }
 
     /**
-     * Removes the full columns made of the same values (by default ignores columns with hidden cards)
+     * Removes all columns whose cards all share the same value (ignoring columns
+     * that contain hidden cards).
+     *
+     * @return the flat list of cards removed
      */
     public ArrayList<Card> removeColumns() {
         return removeColumns(false);
     }
 
     /**
-     * Removes the full columns made of the same values
-     * 
-     * @param ignoreHidden Whether or not to remove columns with hidden cards (true=remove)
+     * Removes all columns whose cards all share the same value.
+     *
+     * @param ignoreHidden {@code true} to also remove columns that contain hidden cards;
+     *                     {@code false} to skip columns with at least one hidden card
+     * @return the flat list of cards that were removed
      */
     public ArrayList<Card> removeColumns(boolean ignoreHidden) {
-        // ArrayList<int[]> finalList = new ArrayList<>();
         ArrayList<Card> removed = new ArrayList<>();
 
-        // we need to iteratebackwards to account for remove columns
+        // iterate backwards to account for shifting indices after each removal
         for (int j = this.length.get() - 1; j >= 0; j--) {
             boolean allSame = true;
             boolean hasHidden = false;
@@ -728,14 +866,10 @@ public class Deck {
         return removed;
     }
 
-    // public void clearFullLines() {
-        
-    // }
-
     /**
-     * Main method used to test Deck operations and streak scanning.
+     * Main method used to test {@code Deck} operations and streak scanning.
      *
-     * @param args Command-line arguments (not used)
+     * @param args command-line arguments (not used)
      */
     public static void main(String[] args) {
 
@@ -778,11 +912,6 @@ public class Deck {
         System.out.println("Adding a column...");
         deck.printAll();
 
-        ArrayList<Card> col2 = new ArrayList<>();
-        col2.add(new Card(13, false));
-        col2.add(new Card(14, false));
-        col2.add(new Card(15, false));
-
         System.out.println("Removing column at index 1...");
         deck.removeColumn(1);
         deck.printAll();
@@ -806,25 +935,16 @@ public class Deck {
         deck = new Deck(5, 3);
 
         ArrayList<Card> r1 = new ArrayList<>();
-        r1.add(new Card(1));
-        r1.add(new Card(1));
-        r1.add(new Card(2));
-        r1.add(new Card(2));
-        r1.add(new Card(2));
+        r1.add(new Card(1)); r1.add(new Card(1)); r1.add(new Card(2));
+        r1.add(new Card(2)); r1.add(new Card(2));
 
         ArrayList<Card> r2 = new ArrayList<>();
-        r2.add(new Card(1));
-        r2.add(new Card(3));
-        r2.add(new Card(3));
-        r2.add(new Card(2));
-        r2.add(new Card(7));
+        r2.add(new Card(1)); r2.add(new Card(3)); r2.add(new Card(3));
+        r2.add(new Card(2)); r2.add(new Card(7));
 
         ArrayList<Card> r3 = new ArrayList<>();
-        r3.add(new Card(1));
-        r3.add(new Card(7));
-        r3.add(new Card(2));
-        r3.add(new Card(7));
-        r3.add(new Card(2));
+        r3.add(new Card(1)); r3.add(new Card(7)); r3.add(new Card(2));
+        r3.add(new Card(7)); r3.add(new Card(2));
 
         deck.addRow(r1);
         deck.addRow(r2);

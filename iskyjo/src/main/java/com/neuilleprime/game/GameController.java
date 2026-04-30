@@ -15,8 +15,24 @@ import com.neuilleprime.game.events.RoundEndedEvent;
 import com.neuilleprime.game.events.ShopRerolledEvent;
 import com.neuilleprime.game.events.TurnStartedEvent;
 
+/**
+ * Central controller that manages the entire game lifecycle.
+ * <p>
+ * Responsibilities include:
+ * <ul>
+ *   <li>Maintaining the turn order and advancing through players</li>
+ *   <li>Managing the draw and discard piles</li>
+ *   <li>Triggering round-end evaluation (scoring, joker effects, shop reroll)</li>
+ *   <li>Dispatching game events to registered {@link GameEventListener}s</li>
+ *   <li>Delegating shop operations (buy, sell, reroll) to the {@link Shop}</li>
+ * </ul>
+ * </p>
+ */
 public class GameController {
 
+    /**
+     * Score thresholds that must be beaten, one per round (round 1 = index 0).
+     */
     private static final int[] scorePerRounds = new int[] {
         20,
         50,
@@ -35,21 +51,58 @@ public class GameController {
         10000
     };
 
+    /** List of all players in the game. */
     private ArrayList<Player> players;
+
+    /** The pile from which players draw cards. */
     private Pile drawPile;
+
+    /** The pile onto which discarded cards are placed. */
     private Pile discardPile;
+
+    /** Index into {@link #players} of the player whose turn it currently is. */
     private int currentPlayerIndex;
+
+    /** Index into {@link #players} of the player who started the current round. */
     private int startingPlayerIndex;
+
+    /** Current round number (1-based). */
     private int round;
+
+    /** Whether the current round is in its ending phase. */
     private boolean isRoundEnding;
+
+    /** Number of players who have pressed "ready" at the shop screen. */
     private int nbrPlayersReady;
+
+    /** Score that all players combined must reach to survive this round. */
     private int roundScore;
+
+    /** Amount of money awarded to a player for beating their share of the quota. */
     private int moneyPerRound;
+
+    /** The last card drawn by a player (used to pass it back to the GUI). */
     private Card lastDrawnCard;
-    // 1=next turn, 2=next round (shop), 0=loss
+
+    /**
+     * Current game state code.
+     * <ul>
+     *   <li>0 = loss (game over)</li>
+     *   <li>1 = next turn</li>
+     *   <li>2 = next round (open shop)</li>
+     * </ul>
+     */
     private int gameState;
+
+    /** The shop instance used for buying, selling, and rerolling jokers. */
     private Shop shop = new Shop();
 
+    /**
+     * Constructs a new {@code GameController} with the given players and card count.
+     *
+     * @param players    the list of players participating in the game
+     * @param nbrOfCards total number of cards to populate the draw pile with
+     */
     public GameController(ArrayList<Player> players, int nbrOfCards) {
         this.players = players;
         this.drawPile = new Pile(nbrOfCards);
@@ -65,57 +118,75 @@ public class GameController {
         this.gameState = 1;
     }
 
-    // client -> server com
+    /**
+     * Executes the given {@link Action} against this controller.
+     * This is the primary client-to-server communication entry point.
+     *
+     * @param action the action to execute
+     */
     public void execute(Action action) {
         action.execute(this);
     }
 
-    // server -> client com
-    // private Map<Player, GameEventListener> listeners = new HashMap<>();
-    // public void addListener(Player player, GameEventListener listener) {
-    //     listeners.put(player, listener);
-    // }
-
-    // // private void notifyPlayer(Player player, Consumer<GameEventListener> event) {
-    // //     GameEventListener listener = listeners.get(player);
-    // //     if (listener != null) event.accept(listener);
-    // // }
-    // private void notifyPlayer(Player player, Consumer<GameEventListener> event) {
-    //     event.accept(listeners.get(player));
-    // }
-
-    // private void notifyAll(Consumer<GameEventListener> event) {
-    //     listeners.values().forEach(event::accept);
-    // }
+    /** Map from player to their list of registered event listeners. */
     private Map<Player, List<GameEventListener>> listeners = new HashMap<>();
 
+    /**
+     * Registers a {@link GameEventListener} for the specified player.
+     * Multiple listeners can be registered per player.
+     *
+     * @param player   the player to register the listener for
+     * @param listener the listener to add
+     */
     public void addListener(Player player, GameEventListener listener) {
         listeners.computeIfAbsent(player, p -> new ArrayList<>()).add(listener);
     }
 
+    /**
+     * Notifies all listeners of the given player with the provided event.
+     *
+     * @param player the player whose listeners should be notified
+     * @param event  a consumer that invokes the appropriate callback on each listener
+     */
     private void notifyPlayer(Player player, Consumer<GameEventListener> event) {
         List<GameEventListener> playerListeners = listeners.get(player);
         if (playerListeners != null) playerListeners.forEach(event::accept);
     }
 
+    /**
+     * Notifies all registered listeners across all players with the provided event.
+     *
+     * @param event a consumer that invokes the appropriate callback on each listener
+     */
     private void notifyAll(Consumer<GameEventListener> event) {
         listeners.values().forEach(list -> list.forEach(event::accept));
     }
 
+    /**
+     * Returns the player whose turn it currently is.
+     *
+     * @return the current {@link Player}
+     */
     public Player getCurrentPlayer() {
         return this.players.get(this.currentPlayerIndex);
     }
 
+    /**
+     * Returns the total number of players in the game.
+     *
+     * @return player count
+     */
     public int getPlayerCount() {
         return this.players.size();
     }
 
+    /**
+     * Returns the top card of the draw pile without removing it, or {@code null}
+     * if the pile is empty.
+     *
+     * @return top card of the draw pile, or {@code null}
+     */
     public Card getDrawPileTop() {
-        // Cas d'un joueur solo, on peut pas le laisser piocher
-        // if (this.players.size() == 1) {
-        //     return getDiscardPileTop();
-        // }
-
         if (this.drawPile.getAllCards().size() > 0) {
             return this.drawPile.getAllCards().getLast();
         }
@@ -124,6 +195,12 @@ public class GameController {
         }
     }
 
+    /**
+     * Returns the top card of the discard pile without removing it, or {@code null}
+     * if the pile is empty.
+     *
+     * @return top card of the discard pile, or {@code null}
+     */
     public Card getDiscardPileTop() {
         if (this.discardPile.getAllCards().size() > 0) {
             return this.discardPile.getAllCards().getLast();
@@ -133,20 +210,42 @@ public class GameController {
         }
     }
 
+    /**
+     * Returns both the draw and discard piles as an array.
+     *
+     * @return array of {@code [drawPile, discardPile]}
+     */
     public Pile[] getBothPiles() {
         return new Pile[] {this.drawPile, this.discardPile};
     }
 
+    /**
+     * Returns the top cards of both piles as an array.
+     *
+     * @return array of {@code [drawPileTop, discardPileTop]}
+     */
     public Card[] getBothPilesTop() {
         return new Card[] {this.drawPile.getAllCards().getLast(), this.discardPile.getAllCards().getLast()};
     }
 
+    /**
+     * Returns the last card that was drawn (from either pile).
+     *
+     * @return the last drawn {@link Card}
+     */
     public Card getLastDrawnedCard() {
         return this.lastDrawnCard;
     }
 
     // TURN LOGIC
 
+    /**
+     * Flips the card at the given coordinates in the given player's deck.
+     * Only the current player is allowed to flip cards.
+     *
+     * @param player     the player attempting to flip a card
+     * @param cardCoords {@code [row, col]} coordinates of the card to flip
+     */
     public void flipCard(Player player, int[] cardCoords) {
         if (player != this.getCurrentPlayer()) {
             return;
@@ -155,12 +254,19 @@ public class GameController {
         player.getDeck().flipCard(cardCoords);
     }
 
+    /**
+     * Replaces the card at the given coordinates in the player's deck with a new card.
+     * The old card is automatically sent to the discard pile.
+     * Only the current player is allowed to replace cards.
+     *
+     * @param player     the player attempting the replacement
+     * @param cardCoords {@code [row, col]} coordinates of the card to replace
+     * @param newCard    the new card to place at those coordinates
+     */
     public void replaceCard(Player player, int[] cardCoords, Card newCard) {
         if (player != this.getCurrentPlayer()) {
             return;
         }
-
-        // AJOUTER DES CHECKS DE PRÉSENCE DANS LA PILE
 
         Card oldCard = player.getDeck().replaceCard(cardCoords, newCard);
         this.discardCard(player, oldCard);
@@ -168,6 +274,13 @@ public class GameController {
         // no need to call this.endTurn() because discardCard alr does it
     }
 
+    /**
+     * Draws the top card from the named pile and stores it as the last drawn card.
+     *
+     * @param pileName {@code "draw"} or {@code "discard"} (case-insensitive)
+     * @return the card that was drawn
+     * @throws IllegalArgumentException if {@code pileName} is neither "draw" nor "discard"
+     */
     public Card drawCard(String pileName) {
         if (pileName.toLowerCase().equals("draw")) {
             Card card = this.drawPile.pop();
@@ -182,6 +295,13 @@ public class GameController {
         }
     }
 
+    /**
+     * Sends the given card to the discard pile and ends the current player's turn.
+     * Only the current player is allowed to discard.
+     *
+     * @param player the player discarding the card
+     * @param card   the card to discard
+     */
     public void discardCard(Player player, Card card) {
         if (player != this.getCurrentPlayer()) {
             return;
@@ -195,6 +315,10 @@ public class GameController {
         this.endTurn();
     }
 
+    /**
+     * Advances the game to the next player's turn, handling round endings and
+     * full-column removal from the current player's deck.
+     */
     private void endTurn() {
         if (!this.getCurrentPlayer().getDeck().hasHiddenCard()) {
             this.endRound();
@@ -218,25 +342,46 @@ public class GameController {
 
     // SHOP BINDING AND LOGIC
 
+    /**
+     * Sells a joker from the given player's collection, adding its sell value to
+     * their money and notifying listeners.
+     *
+     * @param player the player selling the joker
+     * @param joker  the joker to sell
+     */
     public void sellJoker(Player player, Joker joker) {
         System.out.println("tel aviv impressed");
         this.shop.sellJoker(player, joker);
         notifyPlayer(player, l -> l.onJokerSold(new JokerSoldEvent(player)));
     }
 
+    /**
+     * Purchases the given joker for the player, deducting its cost from their money
+     * and notifying listeners with the updated shop contents.
+     *
+     * @param player the player buying the joker
+     * @param joker  the joker to buy
+     */
     public void buyJoker(Player player, Joker joker) {
         ArrayList<Joker> jokers = this.shop.buyJoker(player, joker);
-        // for (Joker j : jokers) {
-        //     System.out.println(j.getName());
-        // }
         notifyPlayer(player, l -> l.onShopRerolledEvent(new ShopRerolledEvent(jokers)));
     }
 
+    /**
+     * Rerolls the shop for the given player, deducting the reroll cost from their
+     * money and notifying listeners with the new joker offerings.
+     *
+     * @param player the player requesting the reroll
+     */
     public void rerollShop(Player player) {
         ArrayList<Joker> jokers = this.shop.rerollShop(player);
         notifyPlayer(player, l -> l.onShopRerolledEvent(new ShopRerolledEvent(jokers)));
     }
 
+    /**
+     * Marks one more player as ready to proceed to the next round.
+     * Once all players are ready, the new round begins.
+     */
     public void readyUp() {
         this.nbrPlayersReady += 1;
         System.out.println("Number of players ready: "+this.nbrPlayersReady+"/"+this.players.size());
@@ -248,6 +393,12 @@ public class GameController {
 
     // NEW ROUND LOGIC
 
+    /**
+     * Begins a new round by resetting the game state and notifying the current
+     * player that their turn has started.
+     *
+     * @param setup {@code true} if this is the very first round of a new game
+     */
     private void beginRound(boolean setup) {
         this.isRoundEnding = false;
         this.gameState = 1;
@@ -261,11 +412,25 @@ public class GameController {
     }
     }
 
+    /**
+     * Marks the current round as ending and increments the round counter.
+     * The actual cleanup and scoring happen in {@link #prepareNewRound(boolean)}.
+     */
     private void endRound() {
         this.round = this.round + 1;
         this.isRoundEnding = true;
     }
 
+    /**
+     * Scores the finished round, distributes money and interest, shuffles and
+     * redeals the draw pile, and fires the {@code onRoundEnded} event.
+     * <p>
+     * If the combined player score is below the quota, the game state is set to
+     * {@code 0} (loss). Otherwise it is set to {@code 2} (proceed to shop).
+     * </p>
+     *
+     * @param setup {@code true} when called as part of initial game setup (first round)
+     */
     private void prepareNewRound(boolean setup) {
         if (!this.isRoundEnding) {
             return;
@@ -341,14 +506,10 @@ public class GameController {
             int plrMoney = plr.getMoney();
 
             // if the player beated his fraction of the quota, give him money
-            // System.out.println("Original money: "+plr.getMoney());
-            // System.out.println("Amount for winning round: "+this.moneyPerRound);
             if (totalValue >= this.roundScore/this.players.size()) {
                 plr.setMoney(plr.getMoney() + this.moneyPerRound);
                 // we'll also ward him bonus money based on how well he performed this round
                 int moneyToAdd = (((totalValue)/(this.roundScore/this.players.size()))-1)*plr.getBonusMoneyRate();
-                // System.out.println("Player went "+(((totalValue)/(this.roundScore/this.players.size()))-1)+"% over the asked amount");
-                // System.out.println("Bonus money: "+moneyToAdd);
                     if (moneyToAdd >= 0) {
                     plr.setMoney(plr.getMoney() + moneyToAdd);
                 }
@@ -356,22 +517,15 @@ public class GameController {
 
             int[] plrInterests = plr.getInterests();
             
-            // System.out.println("Current money: "+plrMoney);
             for (int i=0;i<plrInterests[2];i++) {
-                // System.out.println("Checking for interests");
                 if ((plrMoney - plrInterests[1]) >= 0) {
-                    // System.out.println("Interest ok at "+plrMoney);
                     plrMoney -= plrInterests[1];
                     plr.setMoney(plr.getMoney() + plrInterests[0]);
                 }
                 else {
-                    // System.out.println("Interest not ok at "+plrMoney);
                     break;
                 }
             }
-            
-            // plr.setMoney((int) Math.floor(plr.getMoney() + (plr.getMoney() * moneyToAdd)));
-            // ^ the above line is wrong and leads to enormous rewards, but I kept it because I find it funny
             
             ArrayList<Joker> jokers = this.shop.rerollShop(plr, true);
             notifyPlayer(plr, l -> l.onShopRerolledEvent(new ShopRerolledEvent(jokers)));
@@ -396,16 +550,9 @@ public class GameController {
             this.drawPile.addCard(this.discardPile.pop());
         }
 
-        // System.out.print("Draw pile: ");
-        // this.drawPile.printAll();
-        // System.out.print("Discard pile: ");
-        // this.discardPile.printAll();
-
         System.out.println("Shuffling draw pile...");
         drawPile.shuffle();
         drawPile.hideAll();
-        // System.out.print("New draw pile: ");
-        // this.drawPile.printAll();
 
         for (Player plr : this.players) {
             Deck deck = plr.getDeck();
@@ -418,8 +565,6 @@ public class GameController {
                 }
                 deck.addRow(row);
             }
-            // System.out.println(plr.getName()+"'s deck:");
-            // deck.printAll();
         }
 
         System.out.println("Draw pile size: "+this.drawPile.size());
@@ -438,10 +583,19 @@ public class GameController {
         }
     }
 
+    /**
+     * Starts the game by running initial round preparation.
+     * This should be called once via a {@link com.neuilleprime.game.actions.BeginGameAction}.
+     */
     public void beginGame() {
         prepareNewRound(true);
     }
 
+    /**
+     * Returns the current game state code.
+     *
+     * @return {@code 0} = loss, {@code 1} = next turn, {@code 2} = next round (shop)
+     */
     public int getGameState() {
         return this.gameState;
     }
