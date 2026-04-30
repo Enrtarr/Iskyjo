@@ -55,5 +55,5 @@ Current jokers:
 
 ## Credits
 
-Code by @Enrtarr
-Assets by @maapleuh
+- Code by [Enrtarr](https://github.com/Enrtarr)
+- Assets by [maaple](https://github.com/maapleuh)
