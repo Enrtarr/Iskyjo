@@ -1,6 +1,6 @@
 # Iskyjo
 
-A single-player (soon multiplayer) card game built in Java with JavaFX, loosely inspired by Skyjo and Balatro. The goal each round is to score enough points with your deck before time runs out, using jokers you collect from a shop between rounds.
+A single-player (soon multiplayer) card game built in Java with JavaFX, mainly inspired by Skyjo and Balatro. The goal each round is to score enough points with your deck before time runs out, using jokers you collect from a shop between rounds.
 
 > Work in progress. Core gameplay loop is functional; multiplayer and additional jokers are planned. asdly we won't be able to add all them before the project's deadline.
 
@@ -14,7 +14,7 @@ At the end of a round, all remaining card values are summed, combos (matching st
 
 ```
 iskyjo/src/main/java/com/neuilleprime/
-  Main.java                  - remanent of the old CLI version
+  Main.java                  - usage instruction display
   game/                      - core game logic (cards, deck, piles, players, controller)
     actions/                 - command pattern for all player actions
     events/                  - event types dispatched by GameController
