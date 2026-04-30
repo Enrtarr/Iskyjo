@@ -7,17 +7,43 @@ import com.neuilleprime.game.Deck;
 import javafx.geometry.Pos;
 import javafx.scene.layout.GridPane;
 
+/**
+ * JavaFX component that renders a {@link Deck} as a grid of {@link CardView}s.
+ * <p>
+ * The grid is rebuilt automatically whenever the deck's dimensions (length or
+ * height) change, or whenever the component's preferred size changes.
+ * An optional {@link #setOnRebuild(Runnable)} callback fires after each rebuild
+ * so callers can re-attach interaction handlers to the new card views.
+ * </p>
+ */
 public class DeckView extends GridPane {
 
+    /** The underlying game model deck this view is bound to. */
     private Deck deckElem;
+
+    /** 2-D array of card views, indexed by {@code [row][col]}. */
     private CardView[][] cardViews;
 
+    /** Optional callback invoked after every grid rebuild. */
     private Runnable onRebuild = null;
-    
+
+    /**
+     * Registers a callback to be invoked each time the grid is rebuilt.
+     * Useful for re-attaching drag-and-drop or click handlers to the new views.
+     *
+     * @param callback the runnable to call after every rebuild
+     */
     public void setOnRebuild(Runnable callback) {
         this.onRebuild = callback;
     }
 
+    /**
+     * Constructs a {@code DeckView} bound to the given {@link Deck}.
+     * Builds the initial grid and registers property listeners on the deck
+     * dimensions and the component's preferred size.
+     *
+     * @param deck the game model deck to display
+     */
     public DeckView(Deck deck) {
         this.deckElem = deck;
         cardViews = new CardView[deck.getHeight()][deck.getLength()];
@@ -43,8 +69,14 @@ public class DeckView extends GridPane {
         this.setAlignment(Pos.CENTER);
     }
 
-    // Note that this isn't the cleanest design because we rebuild the deck from the ground up
-    // Also, we should try to change it so we can add an effect when a card is being removed
+    /**
+     * Rebuilds the card grid from scratch based on the current deck dimensions
+     * and preferred size. Clears all existing children, recreates {@link CardView}
+     * instances, and fires {@link #onRebuild} if set.
+     *
+     * @param oldVal previous dimension value (unused, kept for listener compatibility)
+     * @param newVal new dimension value used to compute padding and border styling
+     */
     private void updateDeckGrid(Number oldVal, Number newVal) {
         // styling
         double cardPadding = newVal.doubleValue() * .05;
@@ -81,14 +113,27 @@ public class DeckView extends GridPane {
         if (onRebuild != null) onRebuild.run(); 
     }
 
-    // get the CardView at the specified coordinates (row, col)
+    /**
+     * Returns the {@link CardView} at the given grid coordinates, or {@code null}
+     * if the coordinates are out of bounds.
+     *
+     * @param row row index (0-based)
+     * @param col column index (0-based)
+     * @return the card view at that position, or {@code null}
+     */
     public CardView getCardViewAtCoords(int row, int col) {
         if (row < 0 || col < 0 || row >= cardViews.length || col >= cardViews[0].length) {
             return null;
         }
         return cardViews[row][col];
     }
-    
+
+    /**
+     * Returns a flat list of all non-null {@link CardView}s in the grid,
+     * in row-major order.
+     *
+     * @return list of all card views currently displayed
+     */
     public List<CardView> getAllCardViews() {
         ArrayList<CardView> allCardViews = new ArrayList<>();
 
@@ -103,6 +148,11 @@ public class DeckView extends GridPane {
         return allCardViews;
     }
 
+    /**
+     * Returns the underlying game model deck this view is bound to.
+     *
+     * @return the bound {@link Deck}
+     */
     public Deck getDeckElem() {
         return this.deckElem;
     }

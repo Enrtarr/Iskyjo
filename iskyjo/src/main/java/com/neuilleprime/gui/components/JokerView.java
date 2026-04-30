@@ -13,29 +13,64 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.util.Duration;
 
+/**
+ * JavaFX component that visually represents a {@link Joker}.
+ * <p>
+ * The view consists of two sections:
+ * <ul>
+ *   <li><b>Left pane</b> — the joker's artwork image, always visible.</li>
+ *   <li><b>Right pane</b> — name, description, rarity, and price labels,
+ *       toggled by clicking the artwork image.</li>
+ * </ul>
+ * All dimensions are driven by the component's preferred height so the view
+ * scales correctly in any layout.
+ * </p>
+ */
 public class JokerView extends HBox {
 
+    /** The underlying joker model this view represents. */
     private Joker joker;
 
+    /** Container holding the left image and the right info pane side by side. */
     private HBox hBoxContainer;
+
+    /** The joker's artwork displayed on the left. */
     private ImageView leftImageView;
+
+    /** Stack pane that holds the right info panel. */
     private StackPane rightStackPane;
+
+    /** Transparent image used to maintain the aspect ratio of the right pane. */
     private ImageView rightStackPaneRatio;
+
+    /** Vertical box holding name, description, rarity, and price labels. */
     private VBox rightStackPaneVBOX;
+
+    /** Label showing the joker's display name. */
     private Label jokerName;
+
+    /** Label showing the joker's description. */
     private Label jokerDescription;
+
+    /** Label showing the joker's rarity tier. */
     private Label jokerRarity;
+
+    /** Label showing the joker's buy price. */
     private Label jokerPrice;
 
+    /** Whether the right info pane is currently visible. */
     private boolean isRightPaneVisible = false;
 
+    /**
+     * Constructs a {@code JokerView} for the given joker.
+     * Initialises all sub-components, binds sizes, and wires the click toggle
+     * for the right info pane.
+     *
+     * @param joker the joker to display
+     */
     public JokerView(Joker joker) {
         this.joker = joker;
 
-        // binding the size
-        // this.prefWidthProperty().addListener((obs, oldVal, newVal) -> {
-        //     this.updateSize(oldVal, newVal);
-        // });
         this.prefHeightProperty().addListener((obs, oldVal, newVal) -> {
             this.updateSize(oldVal, newVal);
         });
@@ -89,20 +124,24 @@ public class JokerView extends HBox {
         this.updateSize(0, this.prefHeightProperty().getValue());
     }
 
+    /**
+     * Recalculates and applies font sizes and padding for all labels based on
+     * the new preferred height. Temporarily shows the right pane during the
+     * calculation if it is currently hidden.
+     *
+     * @param oldVal previous height (unused)
+     * @param newVal new preferred height
+     */
     private void updateSize(Number oldVal, Number newVal) {
         if (newVal == null || newVal.doubleValue() <= 0) {
             return;
         }
-
-        // this.leftImageView.fitWidthProperty().set(this.prefWidthProperty().doubleValue());
-        // this.leftImageView.fitHeightProperty().set(this.prefHeightProperty().doubleValue());
         
         boolean wasHidden = !this.isRightPaneVisible;
         if (wasHidden) {
             this.isRightPaneVisible = true;
             setRightPaneVisibility(this.isRightPaneVisible);
         }
-        // if (!this.isRightPaneVisible) {return;}
 
         double jokerNameFontSize = newVal.doubleValue() * .1 / this.jokerName.getText().length() * 15;
         double jokerDescriptionFontSize = newVal.doubleValue() * .075 / this.jokerName.getText().length() * 15;
@@ -163,11 +202,11 @@ public class JokerView extends HBox {
     }
 
     /**
-     * Shake the card with a customizable duration, shake strength (distance), and number of frames for one full cycle.
+     * Plays a shake animation on the joker's artwork image.
      *
-     * @param duration        The total duration of the shake effect in milliseconds.
-     * @param shakeStrength   The maximum distance the card should shake in pixels.
-     * @param numFrames       The number of frames (steps) for one back-and-forth shake cycle.
+     * @param duration      total duration of the shake effect in milliseconds
+     * @param shakeStrength maximum rotation angle in degrees
+     * @param numFrames     number of frames for one full back-and-forth cycle
      */
     public void shake(double duration, double shakeStrength, int numFrames) {
         Timeline shakeTimeline = new Timeline();
@@ -202,15 +241,31 @@ public class JokerView extends HBox {
         shakeTimeline.play();
     }
 
+    /**
+     * Shows or hides the right info pane, also toggling its managed state so
+     * it does not occupy layout space when invisible.
+     *
+     * @param visible {@code true} to show the pane, {@code false} to hide it
+     */
     private void setRightPaneVisibility(boolean visible) {
         this.rightStackPane.setVisible(visible);
         this.rightStackPane.setManaged(visible);
     }
 
+    /**
+     * Returns the underlying joker model this view represents.
+     *
+     * @return the bound {@link Joker}
+     */
     public Joker getJokerElem() {
         return this.joker;
     }
 
+    /**
+     * Returns the image view used to display the joker's artwork.
+     *
+     * @return the left-side artwork {@link ImageView}
+     */
     public ImageView getJokerImageView() {
         return this.leftImageView;
     }

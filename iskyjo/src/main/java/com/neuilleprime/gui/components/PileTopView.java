@@ -6,13 +6,30 @@ import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
 
+/**
+ * JavaFX component that displays the top card of a pile along with the pile's name.
+ * <p>
+ * Consists of a text label at the top and a {@link CardView} below it.
+ * All dimensions are driven by the component's preferred width and height.
+ * </p>
+ */
 public class PileTopView extends VBox {
 
+    /** The top card of the pile being displayed. */
     private Card topCardElem;
 
+    /** Label showing the pile name (e.g. "Draw pile" or "Discard pile"). */
     private Label pileNameLabel;
+
+    /** Visual representation of the top card. */
     private CardView topCardView;
 
+    /**
+     * Constructs a {@code PileTopView} for the given card and pile name.
+     *
+     * @param card     the top card of the pile to display
+     * @param pileName the name to display above the card
+     */
     public PileTopView(Card card, String pileName) {
         this.topCardElem = card;
 
@@ -45,6 +62,13 @@ public class PileTopView extends VBox {
         this.getChildren().add(this.topCardView);
     }
 
+    /**
+     * Recalculates and applies font size and padding for the name label based on
+     * the new preferred height.
+     *
+     * @param oldVal previous height (unused)
+     * @param newVal new preferred height
+     */
     private void updateSize(Number oldVal, Number newVal) {
         double labelFontSize = newVal.doubleValue() * .1 / this.pileNameLabel.getText().length() * 15;
         double cardPadding = newVal.doubleValue() * .05;
@@ -65,10 +89,20 @@ public class PileTopView extends VBox {
         );
     }
 
+    /**
+     * Returns the {@link CardView} used to render the top card.
+     *
+     * @return the top card view
+     */
     public CardView getTopCardView() {
         return this.topCardView;
     }
 
+    /**
+     * Returns the underlying {@link Card} model shown in this view.
+     *
+     * @return the top card
+     */
     public Card getTopCard() {
         return this.topCardView.getCardElem();
     }

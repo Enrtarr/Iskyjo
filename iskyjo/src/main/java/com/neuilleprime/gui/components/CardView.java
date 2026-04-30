@@ -16,15 +16,44 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.util.Duration;
 
+/**
+ * JavaFX component that visually represents a single {@link Card}.
+ * <p>
+ * The view automatically reacts to changes in the underlying card's value
+ * and hidden state via JavaFX property bindings:
+ * <ul>
+ *   <li>When hidden, the card back image is shown.</li>
+ *   <li>When revealed, the front background, tinted overlay, and value label
+ *       are displayed instead.</li>
+ *   <li>The overlay tint colour changes based on the card's numeric value
+ *       to give a quick visual cue of the card's range.</li>
+ * </ul>
+ * </p>
+ */
 public class CardView extends StackPane {
 
+    /** The underlying game model card this view is bound to. */
     private Card cardElem;
 
+    /** Label displaying the card's numeric value. */
     private Label valueLabel;
+
+    /** Image shown when the card is face-down. */
     private ImageView cardBackImage;
+
+    /** Background image shown when the card is face-up. */
     private ImageView cardFrontBg;
+
+    /** Coloured overlay image shown on top of the front background. */
     private ImageView cardFrontOverlay;
 
+    /**
+     * Constructs a {@code CardView} bound to the given {@link Card}.
+     * All images are sized to the component's preferred dimensions and all
+     * property listeners are wired up immediately.
+     *
+     * @param card the game model card to display
+     */
     public CardView(Card card) {
         this.cardElem = card;
 
@@ -64,31 +93,21 @@ public class CardView extends StackPane {
         this.cardBackImage.setPreserveRatio(true);
         this.cardBackImage.setFitWidth(Double.MAX_VALUE);
         this.cardBackImage.setFitHeight(Double.MAX_VALUE);
-        // this.cardBackImage.fitWidthProperty().bind(this.widthProperty());
-        // this.cardBackImage.fitHeightProperty().bind(this.heightProperty());
         this.cardBackImage.fitWidthProperty().bind(this.prefWidthProperty());
         this.cardBackImage.fitHeightProperty().bind(this.prefHeightProperty());
 
         this.cardFrontBg.setPreserveRatio(true);
         this.cardFrontBg.setFitWidth(Double.MAX_VALUE);
         this.cardFrontBg.setFitHeight(Double.MAX_VALUE);
-        // this.cardFrontBg.fitWidthProperty().bind(this.widthProperty());
-        // this.cardFrontBg.fitHeightProperty().bind(this.heightProperty());
         this.cardFrontBg.fitWidthProperty().bind(this.prefWidthProperty());
         this.cardFrontBg.fitHeightProperty().bind(this.prefHeightProperty());
 
         this.cardFrontOverlay.setPreserveRatio(true);
         this.cardFrontOverlay.setFitWidth(Double.MAX_VALUE);
         this.cardFrontOverlay.setFitHeight(Double.MAX_VALUE);
-        // this.cardFrontOverlay.fitWidthProperty().bind(this.widthProperty());
-        // this.cardFrontOverlay.fitHeightProperty().bind(this.heightProperty());
         this.cardFrontOverlay.fitWidthProperty().bind(this.prefWidthProperty());
         this.cardFrontOverlay.fitHeightProperty().bind(this.prefHeightProperty());
 
-        // this.valueLabel.styleProperty().bind(
-        //     this.widthProperty().multiply(0.15)
-        //         .asString("-fx-font-size: %.0fpx; -fx-font-family: 'VCR OSD Mono';")
-        // );
         this.valueLabel.styleProperty().bind(
             this.prefWidthProperty().multiply(0.3)
                 .asString("-fx-font-size: %.0fpx; -fx-font-family: 'VCR OSD Mono';")
@@ -103,6 +122,11 @@ public class CardView extends StackPane {
         );
     }
 
+    /**
+     * Sets the cursor for all visual sub-components of this card view.
+     *
+     * @param cursor the cursor to apply
+     */
     public void setCursorTo(Cursor cursor) {
         this.cardBackImage.setCursor(cursor);
         this.cardFrontBg.setCursor(cursor);
@@ -110,6 +134,9 @@ public class CardView extends StackPane {
         this.valueLabel.setCursor(cursor);
     }
 
+    /**
+     * Switches the card to its face-up appearance.
+     */
     private void show() {
         this.cardBackImage.setVisible(false);
 
@@ -118,6 +145,9 @@ public class CardView extends StackPane {
         this.valueLabel.setVisible(true);
     }
 
+    /**
+     * Switches the card to its face-down appearance.
+     */
     private void hide() {
         this.cardBackImage.setVisible(true);
 
@@ -126,6 +156,19 @@ public class CardView extends StackPane {
         this.valueLabel.setVisible(false);
     }
 
+    /**
+     * Updates the overlay tint and label colour to reflect the given card value.
+     * <ul>
+     *   <li>Negative → red</li>
+     *   <li>Zero → dark red</li>
+     *   <li>1–4 → green</li>
+     *   <li>5–7 → blue</li>
+     *   <li>8–10 → purple</li>
+     *   <li>11+ → gold</li>
+     * </ul>
+     *
+     * @param value the card value to determine the tint colour
+     */
     private void updateTint(int value) {
         String color = null;
 
@@ -149,6 +192,14 @@ public class CardView extends StackPane {
         this.valueLabel.setTextFill(new Color(colorAsDouble[0], colorAsDouble[1], colorAsDouble[2], 1));
     }
 
+    /**
+     * Produces a new {@link WritableImage} by replacing the non-transparent
+     * pixels of {@code image} with the given RGB tint while preserving alpha.
+     *
+     * @param image the source image to tint
+     * @param tint  RGB components in the range {@code [0.0, 1.0]}
+     * @return a new tinted image, or the original if it has no pixels
+     */
     Image getTintedOverlay(Image image, double[] tint) {
 
         int width = (int) Math.round(image.getWidth());
@@ -176,6 +227,14 @@ public class CardView extends StackPane {
         return tinted;
     }
 
+    /**
+     * Converts a {@code #RRGGBB} hex colour string to a {@code double[3]} array
+     * with each channel normalised to {@code [0.0, 1.0]}.
+     *
+     * @param hexString a colour in {@code #RRGGBB} format
+     * @return array {@code [r, g, b]} with values in {@code [0.0, 1.0]}
+     * @throws IllegalArgumentException if the string (after stripping {@code #}) is not exactly 6 characters
+     */
     public static double[] hexToDoubleArray(String hexString) {
         hexString = hexString.replaceAll("#", "");
         
@@ -197,11 +256,11 @@ public class CardView extends StackPane {
     }
 
     /**
-     * Shake the card with a customizable duration, shake strength (distance), and number of frames for one full cycle.
+     * Plays a shake animation on this card view.
      *
-     * @param duration        The total duration of the shake effect in milliseconds.
-     * @param shakeStrength   The maximum distance the card should shake in pixels.
-     * @param numFrames       The number of frames (steps) for one back-and-forth shake cycle.
+     * @param duration      the total duration of the shake effect in milliseconds
+     * @param shakeStrength the maximum rotation angle in degrees
+     * @param numFrames     the number of frames for one full back-and-forth cycle
      */
     public void shake(double duration, double shakeStrength, int numFrames) {
         Timeline shakeTimeline = new Timeline();
@@ -236,8 +295,12 @@ public class CardView extends StackPane {
         shakeTimeline.play();
     }
 
+    /**
+     * Returns the underlying game model card this view represents.
+     *
+     * @return the bound {@link Card}
+     */
     public Card getCardElem() {
         return this.cardElem;
     }
 }
- 

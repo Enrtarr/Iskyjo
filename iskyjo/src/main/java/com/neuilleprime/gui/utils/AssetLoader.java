@@ -4,28 +4,77 @@ import javafx.scene.image.Image;
 import java.util.Map;
 import java.util.HashMap;
 
+/**
+ * Centralized loader for all image assets used in the GUI.
+ * <p>
+ * All images are loaded once in a static initializer block and stored both as
+ * typed constants (e.g. {@link #CARD_BACK}) and in a case-insensitive
+ * {@link #ASSET_MAP} keyed by short name. Use {@link #getAssetFromString(String)}
+ * to look up an asset by name at runtime (e.g. from a joker's texture name).
+ * </p>
+ * <p>
+ * <strong>Note:</strong> every new joker must be registered here alongside its
+ * constant and map entry.
+ * </p>
+ */
 public class AssetLoader {
 
+    /** Card back-face image. */
     public static final Image CARD_BACK;
+
+    /** Generic card background image. */
     public static final Image CARD_BG;
+
+    /** Blank card front image used as the base layer. */
     public static final Image CARD_BLANK;
+
+    /** First card overlay variant (unused in current build). */
     public static final Image CARD_OVERLAY_1;
+
+    /** Second card overlay variant used for tinting. */
     public static final Image CARD_OVERLAY_2;
+
+    /** Fully transparent card-shaped image used for aspect-ratio maintenance. */
     public static final Image CARD_TRANSPARENT;
+
+    /** Neuilleprime studio logo. */
     public static final Image NP_LOGO;
+
+    /** "Play" button image. */
     public static final Image BUTTON_PLAY;
+
+    /** "Leaderboard" button image. */
     public static final Image BUTTON_LEADERBOARD;
+
+    /** "Shop" button image. */
     public static final Image BUTTON_SHOP;
+
+    /** "Reroll" button image. */
     public static final Image BUTTON_REROLL;
+
+    /** "Next Round" button image. */
     public static final Image BUTTON_NEXT_ROUND;
 
-    // jokers
+    // Joker images
+    /** Image for {@link com.neuilleprime.jokers.AddXCardJoker}. */
     public static final Image J_ADD_X_CARD;
+
+    /** Image for {@link com.neuilleprime.jokers.AddXDeckJoker}. */
     public static final Image J_ADD_X_DECK;
+
+    /** Image for {@link com.neuilleprime.jokers.ComboLeftAllJoker}. */
     public static final Image J_COMBO_LEFT_ALL;
+
+    /** Image for {@link com.neuilleprime.jokers.ComboLeftJoker}. */
     public static final Image J_COMBO_LEFT;
+
+    /** Image for {@link com.neuilleprime.jokers.ComboRightJoker}. */
     public static final Image J_COMBO_RIGHT;
 
+    /**
+     * Case-insensitive map from asset short name to its loaded {@link Image}.
+     * Populated in the static initializer alongside the constants above.
+     */
     private static final Map<String, Image> ASSET_MAP = new HashMap<>();
 
     static {
@@ -40,7 +89,7 @@ public class AssetLoader {
         BUTTON_LEADERBOARD = load("/Assets/Buttons/button_leaderboard.png");
         BUTTON_SHOP        = load("/Assets/Buttons/button_shop.png");
         BUTTON_REROLL      = load("/Assets/Buttons/button_reroll.png");
-        BUTTON_NEXT_ROUND   = load("/Assets/Buttons/button_nextround.png");
+        BUTTON_NEXT_ROUND  = load("/Assets/Buttons/button_nextround.png");
 
         ASSET_MAP.put("card_back", CARD_BACK);
         ASSET_MAP.put("card_bg", CARD_BG);
@@ -55,7 +104,6 @@ public class AssetLoader {
         ASSET_MAP.put("button_reroll", BUTTON_REROLL);
         ASSET_MAP.put("button_next_round", BUTTON_NEXT_ROUND);
 
-        // All the jokers (here we do them 2 by 2 cause it looks cleaner to me)
         J_ADD_X_CARD = load("/Assets/Jokers/AddXCardJoker.png");
         ASSET_MAP.put("addxcardjoker", J_ADD_X_CARD);
         J_ADD_X_DECK = load("/Assets/Jokers/AddXDeckJoker.png");
@@ -68,6 +116,13 @@ public class AssetLoader {
         ASSET_MAP.put("comborightjoker", J_COMBO_RIGHT);
     }
 
+    /**
+     * Loads an image from the classpath.
+     *
+     * @param path classpath-relative path to the image resource
+     * @return the loaded {@link Image}
+     * @throws RuntimeException if the resource cannot be found
+     */
     private static Image load(String path) {
         var stream = AssetLoader.class.getResourceAsStream(path);
         if (stream == null) {
@@ -76,6 +131,13 @@ public class AssetLoader {
         return new Image(stream);
     }
 
+    /**
+     * Returns the image associated with the given asset name (case-insensitive).
+     *
+     * @param str the short name of the asset (e.g. {@code "AddXCardJoker"})
+     * @return the corresponding {@link Image}
+     * @throws IllegalArgumentException if {@code str} is {@code null} or unknown
+     */
     public static Image getAssetFromString(String str) {
         if (str == null) {
             throw new IllegalArgumentException("Nom d'asset null");
