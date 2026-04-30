@@ -37,23 +37,67 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 
+/**
+ * Screen displayed between rounds where the player can buy, sell, and reroll jokers.
+ * <p>
+ * Listens to three events from the game controller:
+ * <ul>
+ *   <li>{@link ShopRerolledEvent} — refreshes the center joker row with the new
+ *       offerings, the reroll button, and the current money balance.</li>
+ *   <li>{@link JokerSoldEvent} — refreshes the bottom bar and money display after
+ *       a joker has been sold.</li>
+ *   <li>{@link RoundEndedEvent} — populates the "Next Round" button, buy/sell drop
+ *       zones, and joker inventory. Also resets the {@link #ready} flag.</li>
+ *   <li>{@link TurnStartedEvent} — switches immediately to the game screen when
+ *       all players are ready and the new round begins.</li>
+ * </ul>
+ * </p>
+ * <p>
+ * Player interactions use JavaFX drag-and-drop:
+ * <ul>
+ *   <li>Dragging a shop joker onto the <b>Buy</b> zone → {@link BuyJokerAction}.</li>
+ *   <li>Dragging an owned joker onto the <b>Sell</b> zone → {@link SellJokerAction}.</li>
+ * </ul>
+ * </p>
+ */
 public class ShopScreen {
 
+    /** Screen manager used to navigate between scenes. */
     private final ScreenManager sm;
-    // private final RoundEndedEvent event;
+
+    /**
+     * Whether the local player has already pressed "Next Round".
+     * Prevents double-firing {@link ReadyUpAction}.
+     */
     private boolean ready = false;
 
-    // private String pileBeingDrawned = null;
+    /**
+     * The joker currently being dragged, or {@code null} when no drag is active.
+     */
     private Joker jokerBeingDragged = null;
 
+    /**
+     * Constructs a {@code ShopScreen}.
+     *
+     * @param sm the application screen manager
+     */
     public ShopScreen(ScreenManager sm) {
         this.sm = sm;
     }
 
+    /**
+     * Builds and returns the shop {@link Scene}.
+     * <p>
+     * Registers a {@link GameEventListener} on the local player. Each event
+     * type rebuilds the relevant portions of the layout on the JavaFX
+     * Application Thread.
+     * </p>
+     *
+     * @return the constructed {@link Scene}
+     */
     public Scene buildScene() {
         BorderPane root = new BorderPane();
 
-        // Scene scene = new Scene(root, 1280, 720);
         Scene scene = new Scene(root);
         scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm());
 
@@ -62,12 +106,10 @@ public class ShopScreen {
         VBox leftBar = new VBox();
         leftBar.setAlignment(Pos.CENTER);
         leftBar.prefWidthProperty().bind(scene.widthProperty().multiply(SideBarsHelper.leftBarWidth));
-        // leftBar.prefHeightProperty().bind(scene.heightProperty().multiply(1));
 
         VBox rightBar = new VBox();
         rightBar.setAlignment(Pos.CENTER);
         rightBar.prefWidthProperty().bind(scene.widthProperty().multiply(SideBarsHelper.rightBarWidth));
-        // rightBar.prefHeightProperty().bind(scene.heightProperty().multiply(1));
 
         HBox topBar = new HBox();
         topBar.setAlignment(Pos.CENTER);
@@ -81,10 +123,7 @@ public class ShopScreen {
 
         HBox centerBar = new HBox();
         centerBar.setAlignment(Pos.CENTER);
-        // centerBar.prefWidthProperty().bind(scene.widthProperty().multiply(1));
-        // centerBar.prefHeightProperty().bind(scene.heightProperty().multiply(1));
 
-        // Player player = GameLogic.gameController.getCurrentPlayer();
         Player player = GameLogic.localPlayer;
 
         root.setLeft(leftBar);
@@ -93,13 +132,14 @@ public class ShopScreen {
         root.setBottom(bottomBar);
         root.setCenter(centerBar);
 
-        // delay(2500, () -> {
-        //     deck.removeColumns();
-        //     deck.removeColumn(0);
-        // });
-
         GameLogic.gameController.addListener(player, new GameEventListener() {
 
+            /**
+             * Refreshes the shop's center row with newly rerolled jokers,
+             * updates the reroll cost label, and reloads the money and joker bars.
+             *
+             * @param event the rerolled shop contents
+             */
             @Override
             public void onShopRerolledEvent(ShopRerolledEvent event) {
                 Platform.runLater(() -> {
@@ -117,13 +157,14 @@ public class ShopScreen {
                     rerollButtonBox.prefHeightProperty().bind(centerBar.heightProperty().multiply(0.6));
                     rerollButtonBox.setAlignment(Pos.CENTER);
                     centerBar.getChildren().add(rerollButtonBox);
+
                     HBox jokerBox = new HBox();
                     jokerBox.prefWidthProperty().bind(centerBar.widthProperty().multiply(0.6));
                     jokerBox.prefHeightProperty().bind(centerBar.heightProperty().multiply(0.2));
                     jokerBox.setAlignment(Pos.CENTER);
                     centerBar.getChildren().add(jokerBox);
 
-                    // add the reroll button as well as its price
+                    // add the reroll button and its current price label
                     Button rerollButton = new Button();
                     rerollButton.setGraphic(new ImageView(AssetLoader.BUTTON_REROLL));
                     rerollButton.setStyle("-fx-background-color: transparent;");
@@ -159,7 +200,7 @@ public class ShopScreen {
                     });
                     rerollButtonBox.getChildren().add(rerollCost);
 
-                    // add in the rerolled jokers
+                    // populate the shop row with the new jokers
                     for (Joker joker : event.jokers) {
                         JokerView jokerView = new JokerView(joker);
                         jokerView.prefWidthProperty().bind(jokerBox.prefWidthProperty().multiply(1));
@@ -168,11 +209,14 @@ public class ShopScreen {
 
                         setupJokerInteractions(jokerView, "jokerbuy");
                     }
-
-
                 });
             }
 
+            /**
+             * Refreshes the bottom bar and money display after a joker is sold.
+             *
+             * @param event details about the player who sold a joker
+             */
             @Override
             public void onJokerSold(JokerSoldEvent event) {
                 Platform.runLater(() -> {
@@ -182,15 +226,19 @@ public class ShopScreen {
 
                     leftBar.getChildren().clear();
                     SideBarsHelper.loadMoneyView(leftBar, player.getMoney());
-
-                    // GameLogic.gameController.execute(new RerollShopAction(player));
                 });
             }
 
+            /**
+             * Populates the shop layout when the round ends:
+             * resets the ready flag, adds the "Next Round" button, buy/sell zones,
+             * joker inventory bar, and money display.
+             *
+             * @param event details about the round that ended
+             */
             @Override
             public void onRoundEnded(RoundEndedEvent event) {
                 Platform.runLater(() -> {
-
                     bottomBar.getChildren().clear();
                     SideBarsHelper.loadBottomBar(bottomBar, player);
                     setupBottomBarInteractions(bottomBar);
@@ -211,7 +259,6 @@ public class ShopScreen {
                     });
                     topBar.getChildren().add(nextRoundButton);
 
-                    // sell zone
                     rightBar.getChildren().clear();
 
                     VTextBox buyZoneView = new VTextBox("Buy");
@@ -240,6 +287,11 @@ public class ShopScreen {
                 });
             }
 
+            /**
+             * Switches immediately to the game screen when the new round begins.
+             *
+             * @param event the turn that just started
+             */
             @Override
             public void onTurnStarted(TurnStartedEvent event) {
                 // System.out.println("baka");
@@ -251,6 +303,15 @@ public class ShopScreen {
         return scene;
     }
 
+    /**
+     * Attaches drag-detection handlers to a {@link JokerView} so it can be
+     * dragged onto a buy or sell zone.
+     *
+     * @param jokerView the joker view to make draggable
+     * @param mode      transfer mode string put into the {@link Dragboard}:
+     *                  {@code "jokerbuy"} for shop jokers, {@code "jokersell"} for
+     *                  owned jokers
+     */
     private void setupJokerInteractions(JokerView jokerView, String mode) {
 
         TransferMode transferMode = TransferMode.MOVE;
@@ -259,17 +320,14 @@ public class ShopScreen {
             Dragboard dragboard = jokerView.startDragAndDrop(transferMode);
 
             this.jokerBeingDragged = jokerView.getJokerElem();
-            // this.pileBeingDrawned = pileName;
 
             ClipboardContent content = new ClipboardContent();
             content.putString(mode);
             dragboard.setContent(content);
 
-            // the "floating" image under the mouse
             SnapshotParameters params = new SnapshotParameters();
             params.setFill(Color.TRANSPARENT);
             WritableImage snapshot = jokerView.getJokerImageView().snapshot(params, null);
-            // dragboard.setDragView(snapshot, e.getX(), e.getY());
             Point2D pointInImage = jokerView.getJokerImageView().sceneToLocal(e.getSceneX(), e.getSceneY());
             dragboard.setDragView(snapshot, pointInImage.getX(), pointInImage.getY());
 
@@ -278,14 +336,21 @@ public class ShopScreen {
 
         jokerView.setOnDragDone(e -> {
             if (e.getTransferMode() == transferMode) {
-                // System.out.println("amogsus");
-                // e.get
-                
             }
             e.consume();
         });
     }
 
+    /**
+     * Attaches drag-over, drag-enter, drag-exit, and drag-drop handlers to the
+     * sell zone.
+     * <p>
+     * Only accepts drags with the {@code "jokersell"} transfer string. On drop,
+     * executes a {@link SellJokerAction} for the currently dragged joker.
+     * </p>
+     *
+     * @param zoneView the {@link VTextBox} acting as the sell drop zone
+     */
     private void setupZoneSellInteractions(VTextBox zoneView) {
         zoneView.setOnDragOver(e -> {
             if (e.getGestureSource() != zoneView 
@@ -326,6 +391,16 @@ public class ShopScreen {
         });
     }
 
+    /**
+     * Attaches drag-over, drag-enter, drag-exit, and drag-drop handlers to the
+     * buy zone.
+     * <p>
+     * Only accepts drags with the {@code "jokerbuy"} transfer string. On drop,
+     * executes a {@link BuyJokerAction} for the currently dragged joker.
+     * </p>
+     *
+     * @param zoneView the {@link VTextBox} acting as the buy drop zone
+     */
     private void setupZoneBuyInteractions(VTextBox zoneView) {
         zoneView.setOnDragOver(e -> {
             if (e.getGestureSource() != zoneView 
@@ -366,6 +441,17 @@ public class ShopScreen {
         });
     }
 
+    /**
+     * Walks the bottom bar's child hierarchy and attaches {@code "jokersell"}
+     * drag-detection to every {@link JokerView} found.
+     * <p>
+     * The bottom bar contains {@link HBox}es (one for jokers, one for consumables),
+     * each of which contains {@link JokerView}s.
+     * </p>
+     *
+     * @param bottomBar the bottom {@link HBox} populated by
+     *                  {@link SideBarsHelper#loadBottomBar}
+     */
     private void setupBottomBarInteractions(HBox bottomBar) {
         for (Node child : bottomBar.getChildren()) {
             if (child instanceof HBox hbox) {
@@ -378,7 +464,15 @@ public class ShopScreen {
         }
     }
 
-    // courtesy to @DaveB on stackoverflow
+    /**
+     * Runs a {@link Runnable} after a delay on the JavaFX Application Thread.
+     * <p>
+     * Courtesy of {@code @DaveB} on Stack Overflow.
+     * </p>
+     *
+     * @param millis       delay in milliseconds before {@code continuation} runs
+     * @param continuation the action to run after the delay
+     */
     public static void delay(long millis, Runnable continuation) {
       Task<Void> sleeper = new Task<Void>() {
           @Override

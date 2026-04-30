@@ -11,14 +11,40 @@ import javafx.scene.control.Button;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
 
+/**
+ * The main menu screen shown when the application starts.
+ * <p>
+ * Displays the studio logo and two buttons:
+ * <ul>
+ *   <li><b>Play</b> — executes a {@link BeginGameAction} on the game controller
+ *       and switches to the game screen.</li>
+ *   <li><b>Leaderboard</b> — placeholder button (not yet implemented).</li>
+ * </ul>
+ * </p>
+ */
 public class MenuScreen {
 
+    /** Screen manager used to navigate between scenes. */
     private final ScreenManager sm;
 
+    /**
+     * Constructs a {@code MenuScreen}.
+     *
+     * @param sm the application screen manager
+     */
     public MenuScreen(ScreenManager sm) {
         this.sm = sm;
     }
 
+    /**
+     * Builds and returns the menu {@link Scene}.
+     * <p>
+     * Assumes {@link GameLogic#gameController} has already been initialised
+     * before the Play button is pressed.
+     * </p>
+     *
+     * @return the constructed {@link Scene}
+     */
     public Scene buildScene() {
         VBox root = new VBox(20);
         root.setAlignment(Pos.CENTER);

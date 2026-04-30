@@ -25,20 +25,59 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
+/**
+ * Screen displayed after a round ends successfully, showing the animated
+ * scoring breakdown and a button to proceed to the shop.
+ * <p>
+ * Registers a {@link GameEventListener} on the local player that populates the
+ * layout when a {@link RoundEndedEvent} is received:
+ * <ul>
+ *   <li>Top bar — "Shop" button to navigate to the shop screen.</li>
+ *   <li>Bottom bar — player's jokers and consumables.</li>
+ *   <li>Left bar — player's current money balance.</li>
+ *   <li>Center — snapshot of the player's final deck for the round.</li>
+ *   <li>Right bar — {@link ScoreView} that plays the scoring animation.</li>
+ * </ul>
+ * </p>
+ */
 public class ResultScreen {
 
+    /** Screen manager used to navigate between scenes. */
     private final ScreenManager sm;
-    // private final RoundEndedEvent event;
 
+    /**
+     * Constructs a {@code ResultScreen} with a pre-existing round-ended event.
+     * The event parameter is kept for future use but is not yet consumed.
+     *
+     * @param sm    the application screen manager
+     * @param event the round-ended event (currently unused)
+     */
     public ResultScreen(ScreenManager sm, RoundEndedEvent event) {
         this.sm = sm;
         // this.event = event;
     }
 
+    /**
+     * Constructs a {@code ResultScreen} without a pre-existing event.
+     * The screen will be populated reactively when the next
+     * {@link RoundEndedEvent} fires.
+     *
+     * @param sm the application screen manager
+     */
     public ResultScreen(ScreenManager sm) {
         this.sm = sm;
     }
 
+    /**
+     * Builds and returns the result {@link Scene}.
+     * <p>
+     * Registers a {@link GameEventListener} on the local player. On
+     * {@link RoundEndedEvent}, the layout is rebuilt on the JavaFX Application
+     * Thread and the {@link ScoreView} animation is started.
+     * </p>
+     *
+     * @return the constructed {@link Scene}
+     */
     public Scene buildScene() {
         BorderPane root = new BorderPane();
 
@@ -51,12 +90,10 @@ public class ResultScreen {
         VBox leftBar = new VBox();
         leftBar.setAlignment(Pos.CENTER);
         leftBar.prefWidthProperty().bind(scene.widthProperty().multiply(SideBarsHelper.leftBarWidth));
-        // leftBar.prefHeightProperty().bind(scene.heightProperty().multiply(1));
 
         VBox rightBar = new VBox();
         rightBar.setAlignment(Pos.CENTER);
         rightBar.prefWidthProperty().bind(scene.widthProperty().multiply(.15));
-        // rightBar.prefHeightProperty().bind(scene.heightProperty().multiply(1));
 
         HBox topBar = new HBox();
         topBar.setAlignment(Pos.CENTER);
@@ -70,15 +107,8 @@ public class ResultScreen {
 
         StackPane centerBar = new StackPane();
         centerBar.setAlignment(Pos.CENTER);
-        // centerBar.prefWidthProperty().bind(scene.widthProperty().multiply(1));
-        // centerBar.prefHeightProperty().bind(scene.heightProperty().multiply(1));
 
-        
-
-        // Player player = GameLogic.gameController.getCurrentPlayer();
         Player player = GameLogic.localPlayer;
-
-       
 
         root.setLeft(leftBar);
         root.setRight(rightBar);
@@ -86,18 +116,19 @@ public class ResultScreen {
         root.setBottom(bottomBar);
         root.setCenter(centerBar);
 
-        // delay(2500, () -> {
-        //     deck.removeColumns();
-        //     deck.removeColumn(0);
-        // });
-
         GameLogic.gameController.addListener(player, new GameEventListener() {
+
+            /**
+             * Rebuilds the result screen layout when a round ends.
+             * Populates the top bar with the shop button, bottom bar with jokers,
+             * left bar with money, and center/right with the deck snapshot and
+             * score animation.
+             *
+             * @param event details about the round that just ended
+             */
             @Override
             public void onRoundEnded(RoundEndedEvent event) {
                 Platform.runLater(() -> {
-                    // System.out.println("sus");
-                    // System.out.println("amogus");
-
                     topBar.getChildren().clear();
 
                     Button shopButton = new Button();
@@ -114,48 +145,6 @@ public class ResultScreen {
 
                     leftBar.getChildren().clear();
                     SideBarsHelper.loadMoneyView(leftBar, event.playerMoneys.get(player));
-
-                    // new Thread(() -> {
-                    //     try {
-
-                    //         int playerMoney = event.playerMoneys.get(player);
-
-                    //         Thread.sleep(2500);
-
-                    //         int[] plrInterests = player.getInterests();
-
-                    //         plr.setMoney(plr.getMoney() + this.moneyPerRound);
-                    //         // we'll also ward him bonus money based on how well he performed this round
-                    //         int moneyToAdd = (((totalValue)/(this.roundScore/this.players.size()))-1)*plr.getBonusMoneyRate();
-                    //         // System.out.println("Player went "+(((totalValue)/(this.roundScore/this.players.size()))-1)+"% over the asked amount");
-                    //         // System.out.println("Bonus money: "+moneyToAdd);
-                    //         if (moneyToAdd >= 0) {
-                    //         plr.setMoney(plr.getMoney() + moneyToAdd);
-                    //         }
-            
-                    //         // System.out.println("Current money: "+plrMoney);
-                    //         for (int i=0;i<plrInterests[2];i++) {
-                    //             // System.out.println("Checking for interests");
-                    //             if ((playerMoney[0] - plrInterests[1]) >= 0) {
-                    //                 // System.out.println("Interest ok at "+plrMoney);
-                    //                 playerMoney[0] -= plrInterests[1];
-                    //                 player.setMoney(player.getMoney() + plrInterests[0]);
-                    //             }
-                    //             else {
-                    //                 // System.out.println("Interest not ok at "+plrMoney);
-                    //                 break;
-                    //             }
-                    //         }
-
-                    //         Platform.runLater(() -> {
-                    //             leftBar.getChildren().clear();
-                    //             SideBarsHelper.loadMoneyView(leftBar, 67);
-                    //         });
-
-                    //     } catch (InterruptedException e) {
-                    //         e.printStackTrace();
-                    //     }
-                    // }).start();
 
                     centerBar.getChildren().clear();
 
@@ -196,7 +185,15 @@ public class ResultScreen {
         return scene;
     }
 
-    // courtesy to @DaveB on stackoverflow
+    /**
+     * Runs a {@link Runnable} after a delay on the JavaFX Application Thread.
+     * <p>
+     * Courtesy of {@code @DaveB} on Stack Overflow.
+     * </p>
+     *
+     * @param millis       delay in milliseconds before {@code continuation} runs
+     * @param continuation the action to run after the delay
+     */
     public static void delay(long millis, Runnable continuation) {
       Task<Void> sleeper = new Task<Void>() {
           @Override

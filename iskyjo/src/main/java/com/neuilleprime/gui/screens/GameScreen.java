@@ -35,23 +35,73 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 
+/**
+ * The main in-game screen where the player takes their turns.
+ * <p>
+ * Listens to {@link TurnStartedEvent} to rebuild the full UI for each turn:
+ * pile views, the player's deck, top-bar info labels, and joker/consumable bars.
+ * Listens to {@link RoundEndedEvent} to route to either the game-over screen or
+ * the result screen.
+ * </p>
+ * <p>
+ * Player interactions are handled via JavaFX drag-and-drop and mouse-click:
+ * <ul>
+ *   <li>Dragging a pile card onto a deck card → replace that card.</li>
+ *   <li>Dragging a pile card onto the discard zone → flip a hidden card.</li>
+ *   <li>Clicking a hidden deck card → selects it for the flip interaction.</li>
+ * </ul>
+ * </p>
+ */
 public class GameScreen {
 
+    /** Screen manager used to navigate between scenes. */
     private final ScreenManager sm;
 
+    /**
+     * Name of the pile the player is currently drawing from ({@code "draw"} or
+     * {@code "discard"}), or {@code null} when no drag is active.
+     */
     private String pileBeingDrawned = null;
+
+    /**
+     * The card being dragged from a pile, or {@code null} when no drag is active.
+     */
     private Card cardBeingDragged = null;
+
+    /**
+     * Coordinates {@code [row, col]} of the deck card the player last clicked,
+     * or {@code null} if none has been clicked yet.
+     */
     private int[] deckCardClicked = null;
+
+    /**
+     * {@code true} while the game is waiting for the player to click a hidden
+     * card after dropping a pile card onto the discard zone.
+     */
     private boolean waitingForCardSelection = false;
 
+    /**
+     * Constructs a {@code GameScreen}.
+     *
+     * @param sm the application screen manager
+     */
     public GameScreen(ScreenManager sm) {
         this.sm = sm;
     }
 
+    /**
+     * Builds and returns the game {@link Scene}.
+     * <p>
+     * Registers a {@link GameEventListener} on the local player that rebuilds
+     * the entire layout on each turn and routes to the appropriate screen when
+     * a round ends.
+     * </p>
+     *
+     * @return the constructed {@link Scene}
+     */
     public Scene buildScene() {
         BorderPane root = new BorderPane();
 
-        // Scene scene = new Scene(root, 1280, 720);
         Scene scene = new Scene(root);
         scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm());
 
@@ -60,12 +110,10 @@ public class GameScreen {
         VBox leftBar = new VBox();
         leftBar.setAlignment(Pos.CENTER);
         leftBar.prefWidthProperty().bind(scene.widthProperty().multiply(SideBarsHelper.leftBarWidth));
-        // leftBar.prefHeightProperty().bind(scene.heightProperty().multiply(1));
 
         VBox rightBar = new VBox();
         rightBar.setAlignment(Pos.CENTER);
         rightBar.prefWidthProperty().bind(scene.widthProperty().multiply(SideBarsHelper.rightBarWidth));
-        // rightBar.prefHeightProperty().bind(scene.heightProperty().multiply(1));
 
         HBox topBar = new HBox();
         topBar.setAlignment(Pos.CENTER);
@@ -79,8 +127,6 @@ public class GameScreen {
 
         StackPane centerBar = new StackPane();
         centerBar.setAlignment(Pos.CENTER);
-        // centerBar.prefWidthProperty().bind(scene.widthProperty().multiply(1));
-        // centerBar.prefHeightProperty().bind(scene.heightProperty().multiply(1));
 
         root.setLeft(leftBar);
         root.setRight(rightBar);
@@ -88,13 +134,10 @@ public class GameScreen {
         root.setBottom(bottomBar);
         root.setCenter(centerBar);
 
-        // if no game is found, we create a new one and start it
         if (GameLogic.gameController == null) {
             GameLogic.gameController = GameLogic.setupGame(1, 150); 
-            
         }
 
-        // Player player = GameLogic.gameController.getCurrentPlayer();
         Player player = GameLogic.localPlayer;
 
         GameLogic.gameController.addListener(player, new GameEventListener() {
@@ -102,21 +145,14 @@ public class GameScreen {
             @Override
             public void onTurnStarted(TurnStartedEvent event) {
                 Platform.runLater(() -> {
-                    // System.out.println("amogonus");
                     boolean isLocalPlrTurn = event.currentPlayer == GameLogic.localPlayer;
 
-                    // clear all bar to prevent duplicates
                     topBar.getChildren().clear();
                     bottomBar.getChildren().clear();
                     leftBar.getChildren().clear();
                     rightBar.getChildren().clear();
                     centerBar.getChildren().clear();
 
-                    // for testing purposes, should be removed in the future
-                    // System.out.println("Current deck:");
-                    // event.currentPlayer.getDeck().printAll();
-
-                    // top bar, displaying info
                     Label playerTurnLabel = new TopTextView(event.currentPlayer.getName()+"'s turn", .3);
                     Label roundLabel = new TopTextView("Round "+event.round, .3);
                     Label roundScoreLabel = new TopTextView("Score to beat: "+event.roundScore, .3);
@@ -132,10 +168,8 @@ public class GameScreen {
                     
                     topBar.getChildren().addAll(playerTurnLabel, roundLabel, roundScoreLabel);
 
-                    // joker and consus display (of the current player, regardless who it is)
                     SideBarsHelper.loadBottomBar(bottomBar, event.currentPlayer);
 
-                    // both piles, with regards to single/multi-player
                     boolean isDrawPileEmpty = event.drawPileTop == null;
                     boolean isDiscardPileEmpty = event.discardPileTop == null;
 
@@ -175,7 +209,6 @@ public class GameScreen {
                         leftBar.getChildren().add(discardPileView);
                     }
 
-                    // discard zone
                     VTextBox discardZoneView = new VTextBox("Discard");
                     discardZoneView.setNameColor("#00a6ff");
                     discardZoneView.setContentColor("#000000");
@@ -190,18 +223,15 @@ public class GameScreen {
 
                     rightBar.getChildren().add(discardZoneView);
 
-                    // player deck, centered in the middle of the window
                     DeckView deckView = new DeckView(event.currentPlayer.getDeck());
                     deckView.prefWidthProperty().bind(centerBar.widthProperty().multiply(0.4));
                     deckView.prefHeightProperty().bind(centerBar.heightProperty().multiply(0.6));
 
-                    // making sure the deck can still be d&d/clicked, even when resized
                     deckView.setOnRebuild(() -> setupDeckInteractions(deckView));
                     setupDeckInteractions(deckView);
 
                     centerBar.getChildren().add(deckView);
 
-                    // update all the elements we just added
                     root.setLeft(leftBar);
                     root.setRight(rightBar);
                     root.setTop(topBar);
@@ -218,7 +248,6 @@ public class GameScreen {
                         sm.show("gameover");
                     } else {
                         if (!event.setup) {
-                            // (we only show the result if this wasn't the setup (= the 1st round))
                             sm.show("result");
                         }
                     }
@@ -229,6 +258,13 @@ public class GameScreen {
         return scene;
     }
 
+    /**
+     * Attaches drag-detection handlers to the top card of a pile view so the
+     * player can drag it onto a deck card or the discard zone.
+     *
+     * @param pileTopView the pile view to make draggable
+     * @param pileName    {@code "draw"} or {@code "discard"} — identifies the source pile
+     */
     private void setupPileInteractions(PileTopView pileTopView, String pileName) {
 
         CardView topCardView = pileTopView.getTopCardView();
@@ -244,7 +280,6 @@ public class GameScreen {
             content.putString("card");
             dragboard.setContent(content);
 
-            // the "floating" image under the mouse
             SnapshotParameters params = new SnapshotParameters();
             params.setFill(Color.TRANSPARENT);
             WritableImage snapshot = pileTopView.getTopCardView().snapshot(params, null);
@@ -255,17 +290,24 @@ public class GameScreen {
 
         topCardView.setOnDragDone(e -> {
             if (e.getTransferMode() == transferMode) {
-                // System.out.println("amogsus");
-                // e.get
-                
             }
             e.consume();
         });
     }
 
+    /**
+     * Attaches drag-over, drag-enter, drag-exit, drag-drop, and click handlers
+     * to every {@link CardView} inside the given {@link DeckView}.
+     * <p>
+     * Dropping a card from a pile replaces the target deck card.
+     * Clicking a hidden card selects it; if the player previously dropped a
+     * card on the discard zone, the click also completes the flip interaction.
+     * </p>
+     *
+     * @param deckView the deck view whose cards should become interactive
+     */
     private void setupDeckInteractions(DeckView deckView) {
         for (Node node : deckView.getChildren()) {
-            // drag and drop
             if (node instanceof CardView cardView) {
 
                 cardView.setOnDragOver(e -> {
@@ -294,7 +336,6 @@ public class GameScreen {
                     boolean succes = false;
 
                     if (dragboard.hasString() && dragboard.getString().equals("card") && this.cardBeingDragged != null) {
-                        // System.out.println("prout");
 
                         GameLogic.gameController.execute(new DrawCardAction(this.pileBeingDrawned));
 
@@ -309,9 +350,7 @@ public class GameScreen {
                     e.consume();
                 });
 
-                // clickability
                 cardView.setOnMouseClicked(e -> {
-                    // we only allow to select a card if it is not revealed yet
                     if (cardView.getCardElem().isHidden()) {
                         this.deckCardClicked = new int[] {GridPane.getRowIndex(node), GridPane.getColumnIndex(node)};
                     }
@@ -333,6 +372,18 @@ public class GameScreen {
         }
     }
 
+    /**
+     * Attaches drag-over, drag-enter, drag-exit, and drag-drop handlers to the
+     * discard zone.
+     * <p>
+     * When a pile card is dropped here, the game enters the "waiting for card
+     * selection" state and updates the zone label with an instruction prompt.
+     * The actual flip and discard are executed once the player clicks a hidden
+     * deck card.
+     * </p>
+     *
+     * @param zoneView the {@link VTextBox} acting as the discard drop zone
+     */
     private void setupZoneInteractions(VTextBox zoneView) {
         zoneView.setOnDragOver(e -> {
             if (e.getGestureSource() != zoneView 
@@ -363,10 +414,7 @@ public class GameScreen {
                     && dragboard.getString().equals("card") 
                     && this.cardBeingDragged != null) {
 
-                // now we wait for the player to click on a hidden card
                 this.waitingForCardSelection = true;
-
-                // we also tell them by adding an indicator
                 zoneView.setText("Please click on a card to reveal it");
 
                 succes = true;
