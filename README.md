@@ -1,66 +1,59 @@
-# THIS IS A W.I.P.
+# Iskyjo
 
-## Getting Started
+A single-player (soon multiplayer) card game built in Java with JavaFX, loosely inspired by Skyjo and Balatro. The goal each round is to score enough points with your deck before time runs out, using jokers you collect from a shop between rounds.
 
-Welcome to the VS Code Java world. Here is a guideline to help you get started to write Java code in Visual Studio Code.
+> Work in progress. Core gameplay loop is functional; multiplayer and additional jokers are planned. asdly we won't be able to add all them before the project's deadline.
 
-## Folder Structure
+## How it works
 
-The workspace contains two folders by default, where:
+Each round, cards are dealt face-down into a personal grid. On your turn you draw from either the draw pile or the discard pile, then choose to replace one of your cards or flip a hidden one and throw the drawn card away. Full columns of matching values are cleared automatically.
 
-- `src`: the folder to maintain sources
-- `lib`: the folder to maintain dependencies
+At the end of a round, all remaining card values are summed, combos (matching streaks across rows, columns and diagonals) are scored, and your jokers apply their bonuses on top. If the combined score beats the round quota you move on to the shop, otherwise the game ends.
 
-Meanwhile, the compiled output files will be generated in the `bin` folder by default.
+## Project structure
 
-> If you want to customize the folder structure, open `.vscode/settings.json` and update the related settings there.
+```
+iskyjo/src/main/java/com/neuilleprime/
+  Main.java                  - remanent of the old CLI version
+  game/                      - core game logic (cards, deck, piles, players, controller)
+    actions/                 - command pattern for all player actions
+    events/                  - event types dispatched by GameController
+  jokers/                    - joker base class and all joker implementations
+  gui/
+    main/                    - JavaFX entry point (MainGui)
+    components/              - reusable UI components (CardView, DeckView, JokerView, ...)
+    screens/                 - one class per screen (Menu, Game, Result, Shop, ...)
+    utils/                   - shared helpers (AssetLoader, ScreenManager, SideBarsHelper)
+```
 
-## Dependency Management
+## Getting started
 
-The `JAVA PROJECTS` view allows you to manage your dependencies. More details can be found [here](https://github.com/microsoft/vscode-java-dependency#manage-dependencies).
+**Requirements:** Java 21+, Maven, JavaFX 21
 
+```bash
+cd iskyjo
+mvn javafx:run
+```
 
-## Special cards wiki
+## Jokers
 
-### Jokers
+Jokers are passive items bought in the shop between rounds. They come in five rarities (Common, Uncommon, Rare, Epic, Legendary) and belong to one of three categories:
 
-- [Rarity] *Name* `Description`
+- **DECK** - applied to every card in your grid before scoring
+- **COMBO** - applied to detected streaks during scoring
+- **CARD** - applied to a single card
 
-### Consumables
+Current jokers:
 
-- [Rarity] *Name* `Description`
+| Name | Rarity | Effect |
+|---|---|---|
+| Add X Card | Common | Adds X to one card's value |
+| Add X Deck | Uncommon | Adds X to every card in the deck |
+| Combo Left | Common | Adds X to the streak multiplier of combos of a given size |
+| Combo Right | Common | Adds X to the card value of combos matching a given value |
+| Combo Left All | Uncommon | Adds X to the streak multiplier of all combos |
 
----------------------------------------------------------------------
+## Credits
 
-## Idées (Noms UTBM related tkt)
-
-### Idées de jokers
-
-- [Commun] *Cours de LP2* `Ajoute la valeur de la carte au MULTI si celle-ci est Violette (> 8).`
-- [Commun] *Cours de LO21* `Ajoute la valeur de la carte au MULTI si celle-ci est Rose (5 - 8).`
-- [Commun] *Cours de MT3* `Ajoute la valeur de la carte au MULTI si celle-ci est Verte (1 - 4).`
-- [Peu commun] *Rattrapage* `Ajoute le double de la valeur de la carte la plus faible tenue en main au MULTI.`
-- [Peu commun] *Grugeur* `1 relance gratuite par magasin`
-- [Peu commun] *Rebranding* `Ajoute ×2 au MULTI si la main ne contient qu'une seule couleur.`
-- [Rare] *Blessing du Pere Tachi* `Ajoute +1 ligne et +1 colonne à la grille.`
-- [Rare] *Cheatsheet* `Augmentes toutes les probabilités de +1 (1 chances sur 3 -> 2 chances sur 3)`
-- [Legendaire] *Revisions d'annales* `Pour chaque carte de la grille, 1 chances sur 3 de réveler la couleur associé à la plage de valeur`
-- [Legendaire] *Convergence de Riemann* `Soit a la valeur des ECTS, b la valeur du MULTI, MULTI ×(b-a) si Σn≥1 n^a / n^b converge`
-
-
-- joker qui rajoute × ECTS sur chaque carte à la fin du round
-- joker qui rajoute × au multiplicateurs (la partie de gauche)
-- joker qui rajoute × à certains combos (la partie de gauche)
-- joker qui rajoute × à certains combos (la partie de droite)
-- joker qui empêche 1 colonne de se faire retire à la fin de chaque round
-- joker qui multiplie la valeur total des cartes de la main par ×
-
-### Idées de consomables :
-
-- [Commun] *Café* `Ajoute +5 ECTS à la carte sélectionnée`
-- [Peu Commun] *"La même chose s'il vous plaît"* `Sélectionnez 2 cartes, la 2e carte sélectionnée devient la 1ère`
-
-- conso qui rajoute × ECTS sur chaque carte
-- conso qui rajoute × ECTS sur Y cartes
-- conso qui retourne (montre) × cartes
-- conso qui retourne (cache) × cartes
+Code by @Enrtarr
+Assets by @maapleuh
