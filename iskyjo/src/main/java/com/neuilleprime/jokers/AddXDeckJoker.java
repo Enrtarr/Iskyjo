@@ -9,7 +9,7 @@ import com.neuilleprime.game.*;
  * <p>
  * Category: {@link Joker.JokerCategory#DECK} — applied to the entire deck
  * during the scoring phase.
- * Rarity: {@link Joker.JokerRarity#UNCOMMON}.
+ * Rarity: {@link Joker.JokerRarity#RARE}.
  * </p>
  */
 public class AddXDeckJoker extends Joker {
@@ -43,12 +43,12 @@ public class AddXDeckJoker extends Joker {
     public JokerCategory getCategory() { return CATEGORY; }
 
     /** Constant rarity for this joker type. */
-    public static final JokerRarity RARITY = JokerRarity.UNCOMMON;
+    public static final JokerRarity RARITY = JokerRarity.RARE;
 
     /**
      * {@inheritDoc}
      *
-     * @return {@link JokerRarity#UNCOMMON}
+     * @return {@link JokerRarity#RARE}
      */
     @Override
     public JokerRarity getRarity() { return RARITY; }
