@@ -53,6 +53,16 @@ Current jokers:
 | Combo Right | Common | Adds X to the card value of combos matching a given value |
 | Combo Left All | Uncommon | Adds X to the streak multiplier of all combos |
 
+## Preview
+
+<table align="center">
+  <tr>
+    <td align="center"><img src="iskyjo/src/main/resources/Assets/Preview/preview1.png"/></td>
+    <td align="center"><img src="iskyjo/src/main/resources/Assets/Preview/preview2.png"/></td>
+    <td align="center"><img src="iskyjo/src/main/resources/Assets/Preview/preview3.png"/></td>
+  </tr>
+</table>
+
 ## Credits
 
 - Code by [Enrtarr](https://github.com/Enrtarr)
