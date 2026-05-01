@@ -48,7 +48,7 @@ Current jokers:
 | Name | Rarity | Effect |
 |---|---|---|
 | Add X Card | Common | Adds X to one card's value |
-| Add X Deck | Uncommon | Adds X to every card in the deck |
+| Add X Deck | Rare | Adds X to every card in the deck |
 | Combo Left | Common | Adds X to the streak multiplier of combos of a given size |
 | Combo Right | Common | Adds X to the card value of combos matching a given value |
 | Combo Left All | Uncommon | Adds X to the streak multiplier of all combos |
